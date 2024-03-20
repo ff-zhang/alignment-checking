@@ -5,10 +5,12 @@ from torch.functional import F
 
 from sklearn.model_selection import train_test_split
 
+import matplotlib.pyplot as plt
+
 
 # Given the data as a matrix X with
 
-def construct_classifier(X, t, k, model_config, training_config):
+def construct_classifier(X, t, k, model_config, training_config, plot=False):
     """
     Given the data as a matrix X of shape n x m, an array of cluster/class assignments t of shape n x 1,
     the model configuration, and a training configuration where n is the number of
@@ -33,13 +35,24 @@ def construct_classifier(X, t, k, model_config, training_config):
     temp_target = torch.tensor([1 if x == k else 0 for x in t])
 
     # Training loop
-    train_model(model, X, t, training_config)
+    model, metrics = train_model(model, X, t, training_config)
+
+    if plot:
+        plt.figure()
+        plt.title("Training Loss for Class " + str(k))
+        plt.plot(losses)
+        plt.show()
+
+        plt.figure()
+        plt.title("Training Accuracy for Class " + str(k))
+        plt.plot(accuracies)
+        plt.show()
 
     # Return the model
     return model
 
-def train_model(model, X, t, training_config):
 
+def train_model(model, X, t, training_config, plot=False):
     lr = training_config.lr
     epochs = training_config.epochs
 
@@ -54,6 +67,12 @@ def train_model(model, X, t, training_config):
     train_loader = DataLoader(X_train, batch_size=training_config.batch_size, shuffle=True)
     val_loader = DataLoader(X_val, batch_size=training_config.batch_size, shuffle=True)
 
+    train_losses = []
+    train_accuracies = []
+
+    val_losses = []
+    val_accuracies = []
+
     for epoch in range(epochs):
         model.train()
         for i, data in enumerate(train_loader):
@@ -61,3 +80,30 @@ def train_model(model, X, t, training_config):
 
             optimizer.zero_grad()
 
+            outputs = model(inputs)
+
+            loss = criterion(outputs, labels)
+
+            loss.backward()
+
+            optimizer.step()
+
+            # Log the accuracy
+            train_losses.append(loss)
+            val_losses.append(criterion(model(X_val), t_val))
+
+            train_accuracies.append(accuracy(outputs, labels))
+            val_accuracies.append(accuracy(model(X_val), t_val))
+
+    metrics = {
+        "train_losses": train_losses,
+        "train_accuracies": train_accuracies,
+        "val_losses": val_losses,
+        "val_accuracies": val_accuracies
+    }
+
+    return model, metrics
+
+
+def accuracy(outputs, labels):
+    return (outputs == labels).sum() / len(labels)
