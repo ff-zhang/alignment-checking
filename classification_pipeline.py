@@ -23,9 +23,6 @@ def construct_classifier(X, t, k, model_config, training_config, plot=False):
     :return: A k x 1 array of binary classification models
     """
 
-    # Get all the unique labels from the set of data
-    labels = set(list(t))
-
     # Learn a binary classifier of the config architecture for the k'th class
     model = model_config.build()
 
