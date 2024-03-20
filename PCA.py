@@ -6,7 +6,7 @@ from sklearn.decomposition import PCA
 from model_config import ModelConfig
 
 
-def extract_pca_features(representation: torch.Tensor, model: ModelConfig):
+def extract_pca_features(representation: torch.Tensor, model: ModelConfig, threshold: float = 0.95) -> torch.Tensor:
     '''
     Extract PCA features from the model given LRP representation of shape N x 1 x H x W
 
@@ -22,7 +22,7 @@ def extract_pca_features(representation: torch.Tensor, model: ModelConfig):
     representation = (representation - representation.mean(dim=0)) / representation.std(dim=0)
 
     # Apply PCA to the representation
-    pca = PCA(n_components=0.95, svd_solver='full')
+    pca = PCA(n_components=threshold, svd_solver='full')
 
     # Fit the PCA model
     pca.fit(representation)
