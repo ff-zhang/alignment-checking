@@ -10,6 +10,7 @@ def extract_pca_features(representation: torch.Tensor, model: ModelConfig, thres
     '''
     Extract PCA features from the model given LRP representation of shape N x 1 x H x W
 
+    :param threshold:
     :param representation:
     :param model:
     :return: principal components of the representation
