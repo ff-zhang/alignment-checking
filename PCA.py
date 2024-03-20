@@ -6,15 +6,14 @@ from sklearn.decomposition import PCA
 from model_config import ModelConfig
 
 
-def extract_pca_features(representation: torch.Tensor, model: ModelConfig, threshold: float = 0.95) -> torch.Tensor:
-    '''
+def extract_pca_features(representation: torch.Tensor, threshold: float = 0.95) -> torch.Tensor:
+    """
     Extract PCA features from the model given LRP representation of shape N x 1 x H x W
 
     :param threshold:
     :param representation:
-    :param model:
     :return: principal components of the representation
-    '''
+    """
 
     # Reshape the representation to N x (H * W)
     representation = representation.reshape(representation.shape[0], -1)

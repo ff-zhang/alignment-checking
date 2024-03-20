@@ -1,16 +1,17 @@
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
-from torch.functional import F
 
 from sklearn.model_selection import train_test_split
 
 import matplotlib.pyplot as plt
 
+from model_config import ModelConfig
+from training_config import TrainingConfig
 
-# Given the data as a matrix X with
 
-def construct_classifier(X, t, k, model_config, training_config, plot=False):
+def construct_classifier(X: torch.tensor, t: torch.tensor, k: int, model_config: ModelConfig,
+                         training_config: TrainingConfig, plot: bool = False) -> nn.Module:
     """
     Given the data as a matrix X of shape n x m, an array of cluster/class assignments t of shape n x 1,
     the model configuration, and a training configuration where n is the number of
@@ -18,9 +19,14 @@ def construct_classifier(X, t, k, model_config, training_config, plot=False):
     returns a binary classifier for this class.
 
 
-    :input: Matrix X of shape n x m, Array t of shape n x 1
+    :param X: An n x m matrix of data points
+    :param t: An n x 1 array of class assignments
+    :param k: The target class
+    :param model_config: The model configuration
+    :param training_config: The training configuration
+    :param plot: Whether to plot the training and validation loss and accuracy
 
-    :return: A k x 1 array of binary classification models
+    :return: A binary classification model for the k'th class
     """
 
     # Learn a binary classifier of the config architecture for the k'th class
@@ -54,9 +60,11 @@ def construct_classifier(X, t, k, model_config, training_config, plot=False):
     return model
 
 
-def train_model(model, X, t, training_config, plot=False):
-    lr = training_config.lr
-    epochs = training_config.epochs
+def train_model(model: nn.Module, X: torch.tensor, t: torch.tensor, training_config: TrainingConfig) -> (
+nn.Module, dict):
+    lr = training_config.get_lr()
+    epochs = training_config.get_epochs()
+    batch_size = training_config.get_batch_size()
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
@@ -66,8 +74,8 @@ def train_model(model, X, t, training_config, plot=False):
     X_train, X_val, t_train, t_val = train_test_split(X, t, test_size=0.2)
 
     # Create dataloaders
-    train_loader = DataLoader(X_train, batch_size=training_config.batch_size, shuffle=True)
-    val_loader = DataLoader(X_val, batch_size=training_config.batch_size, shuffle=True)
+    train_loader = DataLoader(X_train, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(X_val, batch_size=batch_size, shuffle=True)
 
     train_losses = []
     train_accuracies = []
@@ -107,5 +115,20 @@ def train_model(model, X, t, training_config, plot=False):
     return model, metrics
 
 
-def accuracy(outputs, labels):
-    return (outputs == labels).sum() / len(labels)
+def accuracy(outputs: torch.tensor, labels: torch.tensor) -> float:
+    """
+    Returns the accruacy of the model given the outputs and labels
+
+    :param outputs:
+    :param labels:
+    :return: accuracy
+    """
+
+    # Get the predicted class
+    _, predicted = torch.max(outputs, 1)
+
+    # Get the number of correct predictions
+    correct = (predicted == labels).sum().item()
+
+    # Return the accuracy
+    return correct / labels.size(0)
