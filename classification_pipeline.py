@@ -26,8 +26,6 @@ def construct_classifier(X, t, k, model_config, training_config, plot=False):
     # Get all the unique labels from the set of data
     labels = set(list(t))
 
-    num_classes = len(labels)
-
     # Learn a binary classifier of the config architecture for the k'th class
     model = model_config.build()
 
@@ -35,7 +33,7 @@ def construct_classifier(X, t, k, model_config, training_config, plot=False):
     temp_target = torch.tensor([1 if x == k else 0 for x in t])
 
     # Training loop
-    model, metrics = train_model(model, X, t, training_config)
+    model, metrics = train_model(model, X, temp_target, training_config)
 
     train_losses = metrics["train_losses"]
     train_accuracies = metrics["train_accuracies"]
