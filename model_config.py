@@ -25,18 +25,20 @@ Don't be stupid with it, make sure the dimensions match please.
 '''
 import torch
 import torch.nn as nn
+
+
 # to import, classifcation_pipeline.py
 
 class ModelConfig:
 
     def __init__(self, format: dict):
-        assert(format.num_layers == len(format.layers))
+        assert (format.num_layers == len(format.layers))
 
         self.num_layers = format.num_layers
         self.layers = []
 
         for modelLayer in format.layers:
-            assert(modelLayer.act in {"ReLU", "Tanh", "Sigmoid"})
+            assert (modelLayer.act in {"ReLU", "Tanh", "Sigmoid"})
 
             temp = {
                 "layer_type": modelLayer.layer_type,
@@ -44,13 +46,12 @@ class ModelConfig:
                 "out_dim": modelLayer.out_dim,
                 "dropout": modelLayer.dropout,
                 "act": modelLayer.act,
-                "batch_norm": modelLayer.batch_norm 
+                "batch_norm": modelLayer.batch_norm
             }
 
             self.layers.append(temp)
 
         self.model = None
-
 
     def build(self):
         self.model = Model(self)
@@ -58,7 +59,6 @@ class ModelConfig:
 
 
 class Model(nn.Module):
-
     layer_type_map = {
         "Linear": nn.Linear
     }
@@ -86,11 +86,10 @@ class Model(nn.Module):
 
             layers.append((layer, is_bn, num_feat))
 
-
     def forward(self, x):
         # assume X is already in the correct shape and all that
         out = x
-        
+
         for layer in self.layers:
             if layer[1]:
                 out = nn.BatchNorm1d(layer[2])
