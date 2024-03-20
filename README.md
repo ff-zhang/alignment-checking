@@ -1,4 +1,4 @@
-### Alignment Checking through Interpreting Axes of Separation for Clusterable Data
+# Alignment Checking through Interpreting Axes of Separation for Clusterable Data
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
