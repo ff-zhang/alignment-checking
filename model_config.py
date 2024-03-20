@@ -25,28 +25,27 @@ Don't be stupid with it, make sure the dimensions match please.
 '''
 import torch
 import torch.nn as nn
+from src.lrp import LRPModel
 
-
-# to import, classifcation_pipeline.py
 
 class ModelConfig:
 
     def __init__(self, format: dict):
-        assert (format.num_layers == len(format.layers))
+        assert (format["num_layers"] == len(format["layers"]))
 
-        self.num_layers = format.num_layers
+        self.num_layers = format["num_layers"]
         self.layers = []
 
-        for modelLayer in format.layers:
-            assert (modelLayer.act in {"ReLU", "Tanh", "Sigmoid"})
+        for modelLayer in format["layers"]:
+            assert (modelLayer["act"] in {"ReLU", "Tanh", "Sigmoid"})
 
             temp = {
-                "layer_type": modelLayer.layer_type,
-                "in_dim": modelLayer.in_dim,
-                "out_dim": modelLayer.out_dim,
-                "dropout": modelLayer.dropout,
-                "act": modelLayer.act,
-                "batch_norm": modelLayer.batch_norm
+                "layer_type": modelLayer["layer_type"],
+                "in_dim": modelLayer["in_dim"],
+                "out_dim": modelLayer["out_dim"],
+                "dropout": modelLayer["dropout"],
+                "act": modelLayer["act"],
+                "batch_norm": modelLayer["batch_norm"]
             }
 
             self.layers.append(temp)
@@ -56,6 +55,9 @@ class ModelConfig:
     def build(self):
         self.model = Model(self)
         return self.model
+    
+    def lrp(self):
+        return LRPModel(self.model)
 
 
 class Model(nn.Module):
@@ -74,15 +76,17 @@ class Model(nn.Module):
 
         layers = []
         for i in range(modelConfig.num_layers):
-            temp = modelConfig.num_layers[i]
+            temp = modelConfig.layers[i]
             layer = nn.Sequential(
                 Model.layer_type_map[temp["layer_type"]](in_features=temp["in_dim"], out_features=temp["out_dim"]),
                 Model.act_map[temp["act"]](),
                 nn.Dropout(p=temp["dropout"])
             )
 
-            is_bn = temp.batch_norm
+            is_bn = temp["batch_norm"]
             num_feat = temp["in_dim"]
+
+            # print(layer)
 
             layers.append((layer, is_bn, num_feat))
 
@@ -96,3 +100,30 @@ class Model(nn.Module):
             out = layer[0](out)
 
         return x
+
+
+if __name__ == "__main__":
+    format = {
+        "num_layers": 2,
+        "layers": [
+            {
+                "layer_type": "Linear",
+                "in_dim": 3,
+                "out_dim": 64,
+                "act": "ReLU",
+                "dropout": 0.1,
+                "batch_norm": True
+            },
+            {
+                "layer_type": "Linear",
+                "in_dim": 64,
+                "out_dim": 3,
+                "act": "ReLU",
+                "dropout": 0.0,
+                "batch_norm": False
+            },
+        ]
+    }
+
+    test_config = ModelConfig(format)
+    print(test_config.build())
