@@ -37,15 +37,22 @@ def construct_classifier(X, t, k, model_config, training_config, plot=False):
     # Training loop
     model, metrics = train_model(model, X, t, training_config)
 
+    train_losses = metrics["train_losses"]
+    train_accuracies = metrics["train_accuracies"]
+    val_losses = metrics["val_losses"]
+    val_accuracies = metrics["val_accuracies"]
+
     if plot:
         plt.figure()
-        plt.title("Training Loss for Class " + str(k))
-        plt.plot(losses)
+        plt.title("Loss for Class " + str(k))
+        plt.plot(train_losses, label="Train")
+        plt.plot(val_losses, label="Val")
         plt.show()
 
         plt.figure()
-        plt.title("Training Accuracy for Class " + str(k))
-        plt.plot(accuracies)
+        plt.title("Accuracy for Class " + str(k))
+        plt.plot(train_accuracies, label="Train")
+        plt.plot(val_accuracies, label="Val")
         plt.show()
 
     # Return the model
