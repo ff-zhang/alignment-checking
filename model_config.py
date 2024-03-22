@@ -22,11 +22,12 @@ ModelLayer format:
 }
 
 Don't be stupid with it, make sure the dimensions match please.
+
+LRP stuff: https://github.com/fhvilshoj/TorchLRP
 '''
 import torch
 import torch.nn as nn
-from src.lrp import LRPModel
-
+import lrp
 
 class ModelConfig:
 
@@ -56,13 +57,14 @@ class ModelConfig:
         self.model = Model(self)
         return self.model
     
-    def lrp(self):
-        return LRPModel(self.model)
+    # def lrp(self):
+    #     return LRPModel(self.model)
 
 
 class Model(nn.Module):
     layer_type_map = {
-        "Linear": nn.Linear
+        "Linear": nn.Linear,
+        "Linear_LRP": lrp.Linear
     }
 
     act_map = {
@@ -71,22 +73,29 @@ class Model(nn.Module):
         "Sigmoid": nn.Sigmoid
     }
 
-    def __init__(self, modelConfig):
+    def __init__(self, modelConfig, lrp_bool=False):
+        # Ensure that lrp_bool is true iff layer_type is an LRP layer if applicable (applies to Linear rn)
         super().__init__()
 
         layers = []
         for i in range(modelConfig.num_layers):
             temp = modelConfig.layers[i]
+
             layer = nn.Sequential(
                 Model.layer_type_map[temp["layer_type"]](in_features=temp["in_dim"], out_features=temp["out_dim"]),
                 Model.act_map[temp["act"]](),
                 nn.Dropout(p=temp["dropout"])
             )
 
+            if lrp_bool:
+                layer = lrp.Sequential(
+                    Model.layer_type_map[temp["layer_type"]](in_features=temp["in_dim"], out_features=temp["out_dim"]),
+                    Model.act_map[temp["act"]](),
+                    nn.Dropout(p=temp["dropout"])
+                )
+
             is_bn = temp["batch_norm"]
             num_feat = temp["in_dim"]
-
-            # print(layer)
 
             layers.append((layer, is_bn, num_feat))
 
