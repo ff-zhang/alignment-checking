@@ -54,7 +54,7 @@ class ModelConfig:
         self.model = None
 
     def build(self):
-        self.model = Model(self)
+        self.model = Model(modelConfig=self)
         return self.model
     
     # def lrp(self):
@@ -75,40 +75,55 @@ class Model(nn.Module):
 
     def __init__(self, modelConfig, lrp_bool=False):
         # Ensure that lrp_bool is true iff layer_type is an LRP layer if applicable (applies to Linear rn)
-        super().__init__()
+        super(Model, self).__init__()
 
-        layers = []
+        self.layers = []
         for i in range(modelConfig.num_layers):
             temp = modelConfig.layers[i]
 
-            layer = nn.Sequential(
-                Model.layer_type_map[temp["layer_type"]](in_features=temp["in_dim"], out_features=temp["out_dim"]),
-                Model.act_map[temp["act"]](),
-                nn.Dropout(p=temp["dropout"])
-            )
+            is_bn = temp["batch_norm"]
 
             if lrp_bool:
-                layer = lrp.Sequential(
-                    Model.layer_type_map[temp["layer_type"]](in_features=temp["in_dim"], out_features=temp["out_dim"]),
-                    Model.act_map[temp["act"]](),
-                    nn.Dropout(p=temp["dropout"])
-                )
+                if is_bn:
+                    layer = lrp.Sequential(
+                        Model.layer_type_map[temp["layer_type"]](in_features=temp["in_dim"], out_features=temp["out_dim"]),
+                        Model.act_map[temp["act"]](),
+                        nn.Dropout(p=temp["dropout"]),
+                        nn.BatchNorm1d(temp["in_dim"])
+                    )
+                else:
+                    layer = lrp.Sequential(
+                        Model.layer_type_map[temp["layer_type"]](in_features=temp["in_dim"], out_features=temp["out_dim"]),
+                        Model.act_map[temp["act"]](),
+                        nn.Dropout(p=temp["dropout"])
+                    )
+            else:
+                if is_bn:
+                    layer = nn.Sequential(
+                        Model.layer_type_map[temp["layer_type"]](in_features=temp["in_dim"], out_features=temp["out_dim"]),
+                        Model.act_map[temp["act"]](),
+                        nn.Dropout(p=temp["dropout"]),
+                        nn.BatchNorm1d(temp["in_dim"])
+                    )
+                else:
+                    layer = nn.Sequential(
+                        Model.layer_type_map[temp["layer_type"]](in_features=temp["in_dim"], out_features=temp["out_dim"]),
+                        Model.act_map[temp["act"]](),
+                        nn.Dropout(p=temp["dropout"])
+                    )
 
-            is_bn = temp["batch_norm"]
-            num_feat = temp["in_dim"]
+            self.layers.append(layer)
 
-            layers.append((layer, is_bn, num_feat))
+        self.layers = nn.ModuleList(self.layers)
 
     def forward(self, x):
         # assume X is already in the correct shape and all that
         out = x
 
         for layer in self.layers:
-            if layer[1]:
-                out = nn.BatchNorm1d(layer[2])
-            out = layer[0](out)
+            out = layer(out)
 
-        return x
+        return out
 
 
 if __name__ == "__main__":

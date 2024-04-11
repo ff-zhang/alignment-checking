@@ -73,9 +73,16 @@ nn.Module, dict):
     # Split the X and t into training and validation sets
     X_train, X_val, t_train, t_val = train_test_split(X, t, test_size=0.2)
 
+    train = []
+    for i in range(len(X_train)):
+        train.append((X_train[i], t_train[i]))
+    val = []
+    for i in range(len(X_val)):
+        val.append((X_val[i], t_val[i]))
+
     # Create dataloaders
-    train_loader = DataLoader(X_train, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(X_val, batch_size=batch_size, shuffle=True)
+    train_loader = DataLoader(train, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val, batch_size=batch_size, shuffle=True)
 
     train_losses = []
     train_accuracies = []
