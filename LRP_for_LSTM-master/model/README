@@ -1,0 +1,18 @@
+- vocab
+
+contains the vocabulary as a python list of strings (enables mapping word string <-> word ID)
+
+
+- embeddings.npy
+
+contains the word embeddings as a numpy array
+
+
+- model
+
+contains the bidirectional LSTM model weights as a python dictionary of numpy arrays
+
+
+This is the trained model released by Li et al. 2016 (https://github.com/jiweil/Visualizing-and-Understanding-Neural-Models-in-NLP), 
+which we converted from torch to numpy format.
+
