@@ -98,6 +98,7 @@ nn.Module, dict):
 
     for epoch in range(epochs):
         model.train()
+        print("Epoch ", epoch, " of ", epochs)
         for i, data in enumerate(train_loader):
             inputs, labels = data
             labels = labels.float()
@@ -119,6 +120,9 @@ nn.Module, dict):
             train_accuracies.append(accuracy(outputs, labels))
             val_accuracies.append(accuracy(model(X_val), t_val))
 
+        print("Epoch ", epoch, " Train Loss: ", train_losses[-1], " Train Accuracy: ", train_accuracies[-1],
+              " Val Loss: ", val_losses[-1], " Val Accuracy: ", val_accuracies[-1])
+
     metrics = {
         "train_losses": train_losses,
         "train_accuracies": train_accuracies,
@@ -139,7 +143,7 @@ def accuracy(outputs: torch.tensor, labels: torch.tensor) -> float:
     """
 
     # Get the predicted class
-    _, predicted = torch.max(outputs, 1)
+    predicted = torch.round(outputs)
 
     # Get the number of correct predictions
     correct = (predicted == labels).sum().item()
