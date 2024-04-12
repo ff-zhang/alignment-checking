@@ -11,14 +11,7 @@ import os
 import lrp
 
 if __name__ == "__main__":
-<<<<<<< HEAD
-    batch_size = 32
-=======
-    # First thing to do is load the data
-    data = pickle.load(open("./glove/clusters_550.pkl", "rb"))
-
     batch_size = 64
->>>>>>> a76301d (new hyperparams)
 
     # First thing to do is load the data
     _, data = pickle.load(open("./glove/clusters_550.pkl", "rb"))
