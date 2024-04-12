@@ -30,7 +30,8 @@ if __name__ == "__main__":
             labels = torch.cat([labels, temp])
 
     # Construct the set of unique labels
-    unique_labels = set(labels)
+    targets = [x.item() for x in labels]
+    unique_labels = set(targets)
 
     # Check if the models have been saved
     if os.path.exists("models.pkl"):
@@ -78,7 +79,7 @@ if __name__ == "__main__":
 
         model_config = ModelConfig(model_format)
 
-        training_config = TrainingConfig(0.01, 100, batch_size)
+        training_config = TrainingConfig(0.01, 5, batch_size)
 
         models = {}
 
