@@ -33,7 +33,7 @@ def construct_classifier(X: torch.tensor, t: torch.tensor, k: int, model_config:
     model = model_config.build()
 
     # Check if the last layer is a sigmoid layer
-    if model_config.layers[-1].act == "Sigmoid":
+    if model_config.layers[-1]["act"] == "Sigmoid":
         logits_loss = False
     else:
         logits_loss = True
