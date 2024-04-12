@@ -2,6 +2,7 @@ import pickle
 import pandas as pd
 from copy import deepcopy
 import numpy as np
+import torch
 
 from classification_pipeline import *
 from model_config import *
@@ -16,22 +17,17 @@ if __name__ == "__main__":
     # X = data[0]
     data = data[1]
 
-    X = np.array([])
-    labels = np.array([])
+    X = None
+    labels = None
 
     for k in data.keys():
-        if X.shape[0] == 0:
-            X = np.array(data[k])
+        if X is None:
+            X = torch.Tensor(data[k])
+            labels = torch.reshape(torch.Tensor([k] * len(data[k])), (-1, 1))
         else:
-            X = np.concatenate([X, np.array(data[k])])
-        labels = np.concatenate([labels, np.array([k] * len(data[k]))])
-
-    # Shuffle the data
-    indices = np.arange(len(labels))
-    np.random.shuffle(indices)
-
-    X = X[indices]
-    labels = labels[indices]
+            X = torch.cat([X, torch.Tensor(data[k])])
+            temp = torch.reshape(torch.Tensor([k] * len(data[k])), (-1, 1))
+            labels = torch.cat([labels, temp])
 
     # Construct the set of unique labels
     unique_labels = set(labels)
@@ -43,21 +39,37 @@ if __name__ == "__main__":
     else:
         print("Models not found")
         model_format = {
-            "num_layers": 2,
+            "num_layers": 4,
             "layers": [
                 {
                     "layer_type": "Linear",
-                    "in_dim": 3,
+                    "in_dim": 50,
                     "out_dim": 64,
                     "act": "ReLU",
                     "dropout": 0.1,
-                    "batch_norm": True
+                    "batch_norm": False
                 },
                 {
                     "layer_type": "Linear",
                     "in_dim": 64,
-                    "out_dim": 3,
+                    "out_dim": 128,
                     "act": "ReLU",
+                    "dropout": 0.0,
+                    "batch_norm": False
+                },
+                {
+                    "layer_type": "Linear",
+                    "in_dim": 128,
+                    "out_dim": 32,
+                    "act": "ReLU",
+                    "dropout": 0.0,
+                    "batch_norm": False
+                },
+                {
+                    "layer_type": "Linear",
+                    "in_dim": 32,
+                    "out_dim": 1,
+                    "act": "Sigmoid",
                     "dropout": 0.0,
                     "batch_norm": False
                 },

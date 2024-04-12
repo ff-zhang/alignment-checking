@@ -72,6 +72,12 @@ nn.Module, dict):
 
     # Split the X and t into training and validation sets
     X_train, X_val, t_train, t_val = train_test_split(X, t, test_size=0.2)
+    t_train = torch.reshape(t_train, (-1, 1))
+    t_val = torch.reshape(t_val, (-1, 1))
+
+    # Cast to float
+    t_train = t_train.float()
+    t_val = t_val.float()
 
     train = []
     for i in range(len(X_train)):
@@ -94,6 +100,7 @@ nn.Module, dict):
         model.train()
         for i, data in enumerate(train_loader):
             inputs, labels = data
+            labels = labels.float()
 
             optimizer.zero_grad()
 
