@@ -32,6 +32,14 @@ def construct_classifier(X: torch.tensor, t: torch.tensor, k: int, model_config:
     # Learn a binary classifier of the config architecture for the k'th class
     model = model_config.build()
 
+    # Check if the last layer is a sigmoid layer
+    if model_config.layers[-1].act == "Sigmoid":
+        logits_loss = False
+    else:
+        logits_loss = True
+
+    training_config.set_logits_loss(logits_loss)
+
     # Create a temporary target vector where everything equal to i is 1 and the rest are 0
     temp_target = torch.tensor([1 if x == k else 0 for x in t])
 
@@ -65,10 +73,14 @@ nn.Module, dict):
     lr = training_config.get_lr()
     epochs = training_config.get_epochs()
     batch_size = training_config.get_batch_size()
+    logits_loss = training_config.get_logits_loss()
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
-    criterion = nn.BCELoss()
+    if logits_loss:
+        criterion = nn.BCEWithLogitsLoss()
+    else:
+        criterion = nn.BCELoss()
 
     # Split the X and t into training and validation sets
     X_train, X_val, t_train, t_val = train_test_split(X, t, test_size=0.2)
@@ -117,8 +129,8 @@ nn.Module, dict):
             train_losses.append(loss)
             val_losses.append(criterion(model(X_val), t_val))
 
-            train_accuracies.append(accuracy(outputs, labels))
-            val_accuracies.append(accuracy(model(X_val), t_val))
+            train_accuracies.append(accuracy(outputs, labels, logits_loss))
+            val_accuracies.append(accuracy(model(X_val), t_val, logits_loss))
 
         print("Epoch ", epoch, " Train Loss: ", train_losses[-1], " Train Accuracy: ", train_accuracies[-1],
               " Val Loss: ", val_losses[-1], " Val Accuracy: ", val_accuracies[-1])
@@ -133,14 +145,19 @@ nn.Module, dict):
     return model, metrics
 
 
-def accuracy(outputs: torch.tensor, labels: torch.tensor) -> float:
+def accuracy(outputs: torch.tensor, labels: torch.tensor, logits_loss: bool) -> float:
     """
     Returns the accruacy of the model given the outputs and labels
 
+    :param logits_loss:
     :param outputs:
     :param labels:
     :return: accuracy
     """
+
+    # If the model uses logits loss, apply a sigmoid to the outputs
+    if logits_loss:
+        outputs = torch.sigmoid(outputs)
 
     # Get the predicted class
     predicted = torch.round(outputs)

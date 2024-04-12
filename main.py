@@ -43,7 +43,7 @@ if __name__ == "__main__":
             "num_layers": 4,
             "layers": [
                 {
-                    "layer_type": "Linear",
+                    "layer_type": "Linear_LRP",
                     "in_dim": 50,
                     "out_dim": 64,
                     "act": "ReLU",
@@ -51,7 +51,7 @@ if __name__ == "__main__":
                     "batch_norm": False
                 },
                 {
-                    "layer_type": "Linear",
+                    "layer_type": "Linear_LRP",
                     "in_dim": 64,
                     "out_dim": 128,
                     "act": "ReLU",
@@ -59,7 +59,7 @@ if __name__ == "__main__":
                     "batch_norm": False
                 },
                 {
-                    "layer_type": "Linear",
+                    "layer_type": "Linear_LRP",
                     "in_dim": 128,
                     "out_dim": 32,
                     "act": "ReLU",
@@ -67,7 +67,7 @@ if __name__ == "__main__":
                     "batch_norm": False
                 },
                 {
-                    "layer_type": "Linear",
+                    "layer_type": "Linear_LRP",
                     "in_dim": 32,
                     "out_dim": 1,
                     "act": "Sigmoid",
@@ -79,7 +79,7 @@ if __name__ == "__main__":
 
         model_config = ModelConfig(model_format)
 
-        training_config = TrainingConfig(0.01, 5, batch_size)
+        training_config = TrainingConfig(0.01, 3, batch_size)
 
         models = {}
 
@@ -96,8 +96,8 @@ if __name__ == "__main__":
             # Add to the model dictionary
             models[k] = model
 
-        # Save the models
-        pickle.dump(models, open("models.pkl", "wb"))
+            # Save the models
+            pickle.dump(models, open("models.pkl", "wb"))
 
     # Now that we have the models
 
