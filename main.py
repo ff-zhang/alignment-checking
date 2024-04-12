@@ -100,14 +100,13 @@ if __name__ == "__main__":
             # Add to the model dictionary
             models[k] = model
 
-            # Save the models
-            pickle.dump(models, open("models.pkl", "wb"))
+        # Save the models
+        pickle.dump(models, open("models.pkl", "wb"))
 
     # Now that we have the models
     if os.path.exists("explanations.pkl"):
         explanations = pickle.load(open("explanations.pkl", "rb"))
         print("Explanations loaded")
-
     else:
         explanations = {}
 
@@ -119,7 +118,6 @@ if __name__ == "__main__":
             X = X.to(device)
 
             predictions = model.forward(X, explain=True, rule="alpha2beta1")
-            predictions = predictions[torch.arange(batch_size), predictions.max(1)[1]]  # Choose maximizing output neuron
 
             predictions = predictions.sum()
             predictions.backward()
@@ -127,5 +125,5 @@ if __name__ == "__main__":
             explanation = X.grad
             explanations[k] = explanation
 
-            # Save the explanations
-            pickle.dump(explanations, open("explanations.pkl", "wb"))
+        # Save the explanations
+        pickle.dump(explanations, open("explanations.pkl", "wb"))
