@@ -7,6 +7,7 @@ import torch
 from classification_pipeline import *
 from model_config import *
 import os
+import lrp
 
 if __name__ == "__main__":
     # First thing to do is load the data
@@ -102,23 +103,27 @@ if __name__ == "__main__":
 
     # Now that we have the models
 
-    explanations = {}
+    if os.path.exists("explanations.pkl"):
+        explanations = pickle.load(open("explanations.pkl", "rb"))
+        print("Explanations loaded")
+    else:
+        explanations = {}
 
-    for k in unique_labels:
-        print("Explaining model for class", k)
-        model = models[k]
+        for k in unique_labels:
+            print("Explaining model for class", k)
+            model = models[k]
 
-        predictions = model.forward(X, explain=True, rule="alpha2beta1")
+            predictions = model.forward(X, explain=True, rule="alpha2beta1")
 
-        predictions = predictions[torch.arange(batch_size), predictions.max(1)[1]]  # Choose maximizing output neuron
+            predictions = predictions[torch.arange(batch_size), predictions.max(1)[1]]  # Choose maximizing output neuron
 
-        predictions = predictions.sum()
+            predictions = predictions.sum()
 
-        predictions.backward()
+            predictions.backward()
 
-        explanation = X.grad
+            explanation = X.grad
 
-        explanations[k] = explanation
+            explanations[k] = explanation
 
-        # Save the explanations
-        pickle.dump(explanations, open("explanations.pkl", "wb"))
+            # Save the explanations
+            pickle.dump(explanations, open("explanations.pkl", "wb"))
