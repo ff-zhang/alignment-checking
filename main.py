@@ -79,7 +79,7 @@ if __name__ == "__main__":
 
         model_config = ModelConfig(model_format)
 
-        training_config = TrainingConfig(0.01, 3, batch_size)
+        training_config = TrainingConfig(0.01, 1, batch_size)
 
         models = {}
 
@@ -92,7 +92,7 @@ if __name__ == "__main__":
             temp_target = torch.tensor([1 if x == k else 0 for x in labels])
 
             # Construct the model
-            model = construct_classifier(temp_X, temp_target, k, model_config, training_config, plot=True)
+            model = construct_classifier(temp_X, temp_target, k, model_config, training_config, plot=False)
 
             # Add to the model dictionary
             models[k] = model

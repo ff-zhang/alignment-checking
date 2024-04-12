@@ -108,6 +108,15 @@ nn.Module, dict):
     val_losses = []
     val_accuracies = []
 
+    train_losses.append(criterion(model(X_train), t_train).item())
+    val_losses.append(criterion(model(X_val), t_val).item())
+
+    train_accuracies.append(accuracy(model(X_train), t_train, logits_loss))
+    val_accuracies.append(accuracy(model(X_val), t_val, logits_loss))
+
+    print("Epoch ", -1, " Train Loss: ", train_losses[-1], " Train Accuracy: ", train_accuracies[-1],
+          " Val Loss: ", val_losses[-1], " Val Accuracy: ", val_accuracies[-1])
+
     for epoch in range(epochs):
         model.train()
         print("Epoch ", epoch, " of ", epochs)
@@ -126,8 +135,8 @@ nn.Module, dict):
             optimizer.step()
 
             # Log the accuracy
-            train_losses.append(loss)
-            val_losses.append(criterion(model(X_val), t_val))
+            train_losses.append(loss.item())
+            val_losses.append(criterion(model(X_val), t_val).item())
 
             train_accuracies.append(accuracy(outputs, labels, logits_loss))
             val_accuracies.append(accuracy(model(X_val), t_val, logits_loss))
