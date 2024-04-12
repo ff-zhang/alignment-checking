@@ -84,6 +84,7 @@ if __name__ == "__main__":
         models = {}
 
         for k in unique_labels:
+            print("Training model for class", k)
             # Create a copy of X
             temp_X = deepcopy(X)
 
@@ -104,6 +105,7 @@ if __name__ == "__main__":
     explanations = {}
 
     for k in unique_labels:
+        print("Explaining model for class", k)
         model = models[k]
 
         predictions = model.forward(X, explain=True, rule="alpha2beta1")
@@ -118,5 +120,5 @@ if __name__ == "__main__":
 
         explanations[k] = explanation
 
-    # Save the explanations
-    pickle.dump(explanations, open("explanations.pkl", "wb"))
+        # Save the explanations
+        pickle.dump(explanations, open("explanations.pkl", "wb"))
