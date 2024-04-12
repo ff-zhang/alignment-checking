@@ -8,6 +8,7 @@ import torch.multiprocessing as mp
 from classification_pipeline import *
 from model_config import *
 import os
+import lrp
 
 if __name__ == "__main__":
     batch_size = 32
@@ -103,23 +104,27 @@ if __name__ == "__main__":
             pickle.dump(models, open("models.pkl", "wb"))
 
     # Now that we have the models
-    explanations = {}
+    if os.path.exists("explanations.pkl"):
+        explanations = pickle.load(open("explanations.pkl", "rb"))
+        print("Explanations loaded")
+    else:
+        explanations = {}
 
-    for k in unique_labels:
-        print("Explaining model for class", k)
+        for k in unique_labels:
+            print("Explaining model for class", k)
 
-        # Move both the model and data onto `device`
-        model = models[k].to(device)
-        X = X.to(device)
+            # Move both the model and data onto `device`
+            model = models[k].to(device)
+            X = X.to(device)
 
-        predictions = model.forward(X, explain=True, rule="alpha2beta1")
-        predictions = predictions[torch.arange(batch_size), predictions.max(1)[1]]  # Choose maximizing output neuron
+            predictions = model.forward(X, explain=True, rule="alpha2beta1")
+            predictions = predictions[torch.arange(batch_size), predictions.max(1)[1]]  # Choose maximizing output neuron
 
-        predictions = predictions.sum()
-        predictions.backward()
+            predictions = predictions.sum()
+            predictions.backward()
 
-        explanation = X.grad
-        explanations[k] = explanation
+            explanation = X.grad
+            explanations[k] = explanation
 
-        # Save the explanations
-        pickle.dump(explanations, open("explanations.pkl", "wb"))
+            # Save the explanations
+            pickle.dump(explanations, open("explanations.pkl", "wb"))

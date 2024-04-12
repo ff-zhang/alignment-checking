@@ -54,7 +54,7 @@ class ModelConfig:
         self.model = None
 
     def build(self):
-        self.model = Model(modelConfig=self)
+        self.model = Model(modelConfig=self, lrp_bool=True)
         return self.model
     
     # def lrp(self):
