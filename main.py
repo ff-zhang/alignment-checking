@@ -1,25 +1,24 @@
 import pickle
-import pandas as pd
 from copy import deepcopy
+
 import numpy as np
 import torch
+import torch.multiprocessing as mp
 
 from classification_pipeline import *
 from model_config import *
 import os
 
 if __name__ == "__main__":
-    # First thing to do is load the data
-    data = pickle.load(open("./glove/clusters_550.pkl", "rb"))
-
     batch_size = 32
 
-    # X = data[0]
-    data = data[1]
+    # First thing to do is load the data
+    _, data = pickle.load(open("./glove/clusters_550.pkl", "rb"))
 
-    X = None
-    labels = None
+    # Checks if GPU(s) are available
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+    X, labels = None, None
     for k in data.keys():
         if X is None:
             X = torch.Tensor(data[k])
@@ -36,7 +35,11 @@ if __name__ == "__main__":
     # Check if the models have been saved
     if os.path.exists("models.pkl"):
         models = pickle.load(open("models.pkl", "rb"))
+        for model in models:
+            model.to(device)
+
         print("Models loaded")
+
     else:
         print("Models not found")
         model_format = {
@@ -78,11 +81,9 @@ if __name__ == "__main__":
         }
 
         model_config = ModelConfig(model_format)
-
         training_config = TrainingConfig(0.01, 1, batch_size)
 
         models = {}
-
         for k in unique_labels:
             print("Training model for class", k)
             # Create a copy of X
@@ -91,8 +92,9 @@ if __name__ == "__main__":
             # Label all the data points with 1 if they are of class k, 0 otherwise
             temp_target = torch.tensor([1 if x == k else 0 for x in labels])
 
-            # Construct the model
-            model = construct_classifier(temp_X, temp_target, k, model_config, training_config, plot=False)
+            # Constructs the model
+            # Note that the model is on `device` at this point
+            model = construct_classifier(temp_X, temp_target, k, model_config, training_config, device)
 
             # Add to the model dictionary
             models[k] = model
@@ -101,23 +103,22 @@ if __name__ == "__main__":
             pickle.dump(models, open("models.pkl", "wb"))
 
     # Now that we have the models
-
     explanations = {}
 
     for k in unique_labels:
         print("Explaining model for class", k)
-        model = models[k]
+
+        # Move both the model and data onto `device`
+        model = models[k].to(device)
+        X = X.to(device)
 
         predictions = model.forward(X, explain=True, rule="alpha2beta1")
-
         predictions = predictions[torch.arange(batch_size), predictions.max(1)[1]]  # Choose maximizing output neuron
 
         predictions = predictions.sum()
-
         predictions.backward()
 
         explanation = X.grad
-
         explanations[k] = explanation
 
         # Save the explanations
