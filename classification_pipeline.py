@@ -102,8 +102,8 @@ def train_model(model: nn.Module, X: torch.tensor, t: torch.tensor, training_con
         val.append((X_val[i], t_val[i]))
 
     # Create dataloaders
-    train_loader = DataLoader(train, batch_size=batch_size, shuffle=True, pin_memory=True)
-    val_loader = DataLoader(val, batch_size=batch_size, shuffle=True, pin_memory=True)
+    train_loader = DataLoader(train, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val, batch_size=batch_size, shuffle=True)
 
     train_losses = []
     train_accuracies = []
