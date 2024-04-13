@@ -13,6 +13,10 @@ if __name__ == "__main__":
     # First thing to do is load the data
     data = pickle.load(open("./glove/clusters_550.pkl", "rb"))
 
+    # Set the seed
+    seed = 2
+    torch.manual_seed(seed)
+
     batch_size = 64
 
     # X = data[0]
