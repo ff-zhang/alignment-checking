@@ -1,0 +1,15 @@
+#!/bin/bash
+#SBATCH --job-name=413_training
+#SBATCH --gres=gpu:t4:4
+#SBATCH --qos=m3
+#SBATCH --time=4:00:00
+#SBATCH -c 30
+#SBATCH --mem=60G
+#SBATCH --output=slurm/slurm-%j.out
+#SBATCH --error=slurm/slurm-%j.err
+
+# prepare your environment here
+conda activate mul
+
+# put your command here
+python3 main.py
