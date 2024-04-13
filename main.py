@@ -13,7 +13,7 @@ if __name__ == "__main__":
     # First thing to do is load the data
     data = pickle.load(open("./glove/clusters_550.pkl", "rb"))
 
-    batch_size = 32
+    batch_size = 64
 
     # X = data[0]
     data = data[1]
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     else:
         print("Models not found")
 
-        training_config = TrainingConfig(0.01, 3, batch_size)
+        training_config = TrainingConfig(0.001, 3, batch_size)
 
         models = {}
 
