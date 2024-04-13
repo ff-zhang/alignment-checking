@@ -116,12 +116,15 @@ class Model(nn.Module):
 
         self.layers = nn.ModuleList(self.layers)
 
-    def forward(self, x):
+    def forward(self, x, explain=False, rule="epsilon", pattern=None):
         # assume X is already in the correct shape and all that
         out = x
 
         for layer in self.layers:
-            out = layer(out)
+            if explain:
+                out = layer.forward(out, explain=explain, rule=rule, pattern=pattern)
+            else:
+                out = layer(out)
 
         return out
 

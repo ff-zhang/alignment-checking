@@ -31,7 +31,47 @@ if __name__ == "__main__":
 
     # Construct the set of unique labels
     targets = [x.item() for x in labels]
-    unique_labels = set(targets)
+    unique_labels = list(set(targets))
+
+    model_format = {
+        "num_layers": 4,
+        "layers": [
+            {
+                "layer_type": "Linear_LRP",
+                "in_dim": 50,
+                "out_dim": 64,
+                "act": "ReLU",
+                "dropout": 0.1,
+                "batch_norm": False
+            },
+            {
+                "layer_type": "Linear_LRP",
+                "in_dim": 64,
+                "out_dim": 128,
+                "act": "ReLU",
+                "dropout": 0.0,
+                "batch_norm": False
+            },
+            {
+                "layer_type": "Linear_LRP",
+                "in_dim": 128,
+                "out_dim": 32,
+                "act": "ReLU",
+                "dropout": 0.0,
+                "batch_norm": False
+            },
+            {
+                "layer_type": "Linear_LRP",
+                "in_dim": 32,
+                "out_dim": 1,
+                "act": "Sigmoid",
+                "dropout": 0.0,
+                "batch_norm": False
+            },
+        ]
+    }
+
+    model_config = ModelConfig(model_format)
 
     # Check if the models have been saved
     if os.path.exists("models.pkl"):
@@ -43,46 +83,8 @@ if __name__ == "__main__":
 
     else:
         print("Models not found")
-        model_format = {
-            "num_layers": 4,
-            "layers": [
-                {
-                    "layer_type": "Linear_LRP",
-                    "in_dim": 50,
-                    "out_dim": 64,
-                    "act": "ReLU",
-                    "dropout": 0.1,
-                    "batch_norm": False
-                },
-                {
-                    "layer_type": "Linear_LRP",
-                    "in_dim": 64,
-                    "out_dim": 128,
-                    "act": "ReLU",
-                    "dropout": 0.0,
-                    "batch_norm": False
-                },
-                {
-                    "layer_type": "Linear_LRP",
-                    "in_dim": 128,
-                    "out_dim": 32,
-                    "act": "ReLU",
-                    "dropout": 0.0,
-                    "batch_norm": False
-                },
-                {
-                    "layer_type": "Linear_LRP",
-                    "in_dim": 32,
-                    "out_dim": 1,
-                    "act": "Sigmoid",
-                    "dropout": 0.0,
-                    "batch_norm": False
-                },
-            ]
-        }
 
-        model_config = ModelConfig(model_format)
-        training_config = TrainingConfig(0.01, 1, batch_size)
+        training_config = TrainingConfig(0.0001, 50, batch_size)
 
         models = {}
         for k in unique_labels:
@@ -108,8 +110,16 @@ if __name__ == "__main__":
         explanations = pickle.load(open("explanations.pkl", "rb"))
         print("Explanations loaded")
     else:
+        X.requires_grad = True
+
         explanations = {}
 
+        if model_config.layers[-1]["act"] == "Sigmoid":
+            criterion = nn.BCELoss()
+        else:
+            criterion = nn.BCEWithLogitsLoss()
+
+        # k = unique_labels[0]
         for k in unique_labels:
             print("Explaining model for class", k)
 
@@ -118,7 +128,6 @@ if __name__ == "__main__":
             X = X.to(device)
 
             predictions = model.forward(X, explain=True, rule="alpha2beta1")
-
             predictions = predictions.sum()
             predictions.backward()
 
