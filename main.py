@@ -11,6 +11,9 @@ import os
 import lrp
 
 if __name__ == "__main__":
+    # Set the seed
+    seed = 2
+    torch.manual_seed(seed)
     batch_size = 64
 
     # First thing to do is load the data
@@ -85,7 +88,7 @@ if __name__ == "__main__":
         print("Models not found")
 
         training_config = TrainingConfig(0.0001, 50, batch_size)
-
+        
         models = {}
         for k in unique_labels:
             print("Training model for class", k)
@@ -109,10 +112,8 @@ if __name__ == "__main__":
     if os.path.exists("explanations.pkl"):
         explanations = pickle.load(open("explanations.pkl", "rb"))
         print("Explanations loaded")
-
     else:
         X.requires_grad = True
-
         explanations = {}
 
         if model_config.layers[-1]["act"] == "Sigmoid":
@@ -134,6 +135,6 @@ if __name__ == "__main__":
 
             explanation = X.grad
             explanations[k] = explanation
-
+            
         # Save the explanations
         pickle.dump(explanations, open("explanations.pkl", "wb"))
