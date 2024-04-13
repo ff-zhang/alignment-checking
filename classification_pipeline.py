@@ -111,6 +111,14 @@ def train_model(model: nn.Module, X: torch.tensor, t: torch.tensor, training_con
     val_losses = []
     val_accuracies = []
 
+    # Print devices
+    print("Device: ", device)
+    print("X_train device: ", X_train.device)
+    print("X_val device: ", X_val.device)
+    print("t_train device: ", t_train.device)
+    print("t_val device: ", t_val.device)
+    print("Model device: ", next(model.parameters()).device)
+
     train_losses.append(criterion(model(X_train), t_train).item())
     val_losses.append(criterion(model(X_val), t_val).item())
 
