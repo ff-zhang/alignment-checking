@@ -11,7 +11,7 @@ from training_config import TrainingConfig
 
 
 def construct_classifier(X: torch.tensor, t: torch.tensor, k: int, model_config: ModelConfig,
-                         training_config: TrainingConfig, plot: bool = False) -> nn.Module:
+                         training_config: TrainingConfig, device: torch.device, plot: bool = False) -> nn.Module:
     """
     Given the data as a matrix X of shape n x m, an array of cluster/class assignments t of shape n x 1,
     the model configuration, and a training configuration where n is the number of
@@ -24,19 +24,17 @@ def construct_classifier(X: torch.tensor, t: torch.tensor, k: int, model_config:
     :param k: The target class
     :param model_config: The model configuration
     :param training_config: The training configuration
+    :param device: The device to train the model on
     :param plot: Whether to plot the training and validation loss and accuracy
 
     :return: A binary classification model for the k'th class
     """
 
     # Learn a binary classifier of the config architecture for the k'th class
-    model = model_config.build()
+    model = model_config.build().to(device)
 
     # Check if the last layer is a sigmoid layer
-    if model_config.layers[-1]["act"] == "Sigmoid":
-        logits_loss = False
-    else:
-        logits_loss = True
+    logits_loss = not (model_config.layers[-1]["act"] == "Sigmoid")
 
     training_config.set_logits_loss(logits_loss)
 
@@ -44,7 +42,7 @@ def construct_classifier(X: torch.tensor, t: torch.tensor, k: int, model_config:
     temp_target = t
 
     # Training loop
-    model, metrics = train_model(model, X, temp_target, training_config)
+    model, metrics = train_model(model, X, temp_target, training_config, device)
 
     train_losses = metrics["train_losses"]
     train_accuracies = metrics["train_accuracies"]
@@ -68,8 +66,9 @@ def construct_classifier(X: torch.tensor, t: torch.tensor, k: int, model_config:
     return model
 
 
-def train_model(model: nn.Module, X: torch.tensor, t: torch.tensor, training_config: TrainingConfig) -> (
-nn.Module, dict):
+def train_model(model: nn.Module, X: torch.tensor, t: torch.tensor, training_config: TrainingConfig,
+                device: torch.device) -> (nn.Module, dict):
+    # Initialize the training hyperparameters
     lr = training_config.get_lr()
     epochs = training_config.get_epochs()
     batch_size = training_config.get_batch_size()
@@ -101,8 +100,8 @@ nn.Module, dict):
         val.append((X_val[i], t_val[i]))
 
     # Create dataloaders
-    train_loader = DataLoader(train, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val, batch_size=batch_size, shuffle=True)
+    train_loader = DataLoader(train, batch_size=batch_size, shuffle=True, pin_memory=True)
+    val_loader = DataLoader(val, batch_size=batch_size, shuffle=True, pin_memory=True)
 
     train_losses = []
     train_accuracies = []
@@ -123,15 +122,13 @@ nn.Module, dict):
         model.train()
         print("Epoch ", epoch, " of ", epochs)
         for i, data in enumerate(train_loader):
-            inputs, labels = data
+            inputs, labels = map(lambda x: x.to(device), data)
             labels = labels.float()
 
             optimizer.zero_grad()
 
             outputs = model(inputs)
-
             loss = criterion(outputs, labels)
-
             loss.backward()
 
             optimizer.step()
