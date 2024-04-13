@@ -76,10 +76,12 @@ def train_model(model: nn.Module, X: torch.tensor, t: torch.tensor, training_con
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
+    weight = torch.tensor([500.0])
+
     if logits_loss:
-        criterion = nn.BCEWithLogitsLoss()
+        criterion = nn.BCEWithLogitsLoss(weight=weight)
     else:
-        criterion = nn.BCELoss()
+        criterion = nn.BCELoss(weight=weight)
 
     # Split the X and t into training and validation sets
     X_train, X_val, t_train, t_val = train_test_split(X, t, test_size=0.2)
