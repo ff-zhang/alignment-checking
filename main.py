@@ -81,7 +81,7 @@ if __name__ == "__main__":
     else:
         print("Models not found")
 
-        training_config = TrainingConfig(0.01, 1, batch_size)
+        training_config = TrainingConfig(0.01, 3, batch_size)
 
         models = {}
 
