@@ -41,7 +41,7 @@ def construct_classifier(X: torch.tensor, t: torch.tensor, k: int, model_config:
     training_config.set_logits_loss(logits_loss)
 
     # Create a temporary target vector where everything equal to i is 1 and the rest are 0
-    temp_target = torch.tensor([1 if x == k else 0 for x in t])
+    temp_target = t
 
     # Training loop
     model, metrics = train_model(model, X, temp_target, training_config)
@@ -141,8 +141,12 @@ nn.Module, dict):
             train_accuracies.append(accuracy(outputs, labels, logits_loss))
             val_accuracies.append(accuracy(model(X_val), t_val, logits_loss))
 
-        print("Epoch ", epoch, " Train Loss: ", train_losses[-1], " Train Accuracy: ", train_accuracies[-1],
-              " Val Loss: ", val_losses[-1], " Val Accuracy: ", val_accuracies[-1])
+        full_train_loss = criterion(model(X_train), t_train).item()
+        full_val_loss = criterion(model(X_val), t_val).item()
+        full_train_accuracy = accuracy(model(X_train), t_train, logits_loss)
+        full_val_accuracy = accuracy(model(X_val), t_val, logits_loss)
+        print("Epoch ", epoch, " Train Loss: ", full_train_loss, " Train Accuracy: ", full_train_accuracy,
+              " Val Loss: ", full_val_loss, " Val Accuracy: ", full_val_accuracy)
 
     metrics = {
         "train_losses": train_losses,
