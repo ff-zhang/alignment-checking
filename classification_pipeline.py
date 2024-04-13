@@ -76,7 +76,7 @@ def train_model(model: nn.Module, X: torch.tensor, t: torch.tensor, training_con
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
-    weight = torch.tensor([500.0])
+    weight = torch.tensor([500.0]).to(device)
 
     if logits_loss:
         criterion = nn.BCEWithLogitsLoss(weight=weight)
