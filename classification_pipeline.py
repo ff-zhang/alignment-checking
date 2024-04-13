@@ -89,8 +89,10 @@ def train_model(model: nn.Module, X: torch.tensor, t: torch.tensor, training_con
     t_val = torch.reshape(t_val, (-1, 1))
 
     # Cast to float
-    t_train = t_train.float()
-    t_val = t_val.float()
+    X_train = X_train.to(device)
+    X_val = X_val.to(device)
+    t_train = t_train.float().to(device)
+    t_val = t_val.float().to(device)
 
     train = []
     for i in range(len(X_train)):
