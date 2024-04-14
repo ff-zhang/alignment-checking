@@ -130,14 +130,14 @@ if __name__ == "__main__":
     for k in unique_labels:
         models[k] = None
 
-    # Check if the models have been saved
-    if os.path.exists(f"./models_{start}_{end}.pkl"):
-        models = pickle.load(open(f"./models_{start}_{end}.pkl", "rb"))
-        for k in models.keys():
-            if models[k] is not None:
-                models[k] = models[k].to(device)
-
-        train_flag = any(models[k] is None for k in models.keys())
+    # # Check if the models have been saved
+    # if os.path.exists(f"./models_{start}_{end}.pkl"):
+    #     models = pickle.load(open(f"./models_{start}_{end}.pkl", "rb"))
+    #     for k in models.keys():
+    #         if models[k] is not None:
+    #             models[k] = models[k].to(device)
+    #
+    #     train_flag = any(models[k] is None for k in models.keys())
 
     if not train_flag:
         print("All models trained")
