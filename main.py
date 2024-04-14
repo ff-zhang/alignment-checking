@@ -20,7 +20,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Generate intervals starting from 100
-    interval_start_points = np.arange(100, 550, args.interval_size)
+    interval_start_points = np.arange(100, 500, args.interval_size)
 
     # Add a new point at the start
     interval_start_points = np.insert(interval_start_points, 0, 93)
@@ -53,8 +53,6 @@ if __name__ == "__main__":
         if start is None:
             print("All intervals have been processed")
             exit()
-        else:
-            print("Processing interval", start, end)
 
         pickle.dump(interval_dict, open("sharding.pkl", "wb"))
 
@@ -130,14 +128,14 @@ if __name__ == "__main__":
     for k in unique_labels:
         models[k] = None
 
-    # # Check if the models have been saved
-    # if os.path.exists(f"./models_{start}_{end}.pkl"):
-    #     models = pickle.load(open(f"./models_{start}_{end}.pkl", "rb"))
-    #     for k in models.keys():
-    #         if models[k] is not None:
-    #             models[k] = models[k].to(device)
-    #
-    #     train_flag = any(models[k] is None for k in models.keys())
+    # Check if the models have been saved
+    if os.path.exists(f"./models_{start}_{end}.pkl"):
+        models = pickle.load(open(f"./models_{start}_{end}.pkl", "rb"))
+        for k in models.keys():
+            if models[k] is not None:
+                models[k] = models[k].to(device)
+
+        train_flag = any(models[k] is None for k in models.keys())
 
     if not train_flag:
         print("All models trained")
@@ -150,7 +148,6 @@ if __name__ == "__main__":
         
         for k in unique_labels:
             if models[k] is not None or k < start or k >= end:
-                print("Skipping class", k)
                 continue
             print("Training model for class", k)
             # Create a copy of X
