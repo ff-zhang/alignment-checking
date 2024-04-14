@@ -12,4 +12,4 @@
 conda activate mul
 
 # put your command here
-python3 main.py
+python3 main.py --interval_size 25

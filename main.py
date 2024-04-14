@@ -15,13 +15,42 @@ from argparse import ArgumentParser
 if __name__ == "__main__":
 
     parser = ArgumentParser()
-    parser.add_argument("--start", type=int, default=0)
-    parser.add_argument("--end", type=int, default=550)
+    parser.add_argument("--interval_size", type=int, default=25)
 
     args = parser.parse_args()
 
-    start = args.start
-    end = args.end
+    # Generate intervals starting from 100
+    interval_start_points = np.arange(100, 550, args.interval_size)
+
+    # Add a new point at the start
+    interval_start_points = np.insert(interval_start_points, 93, 0)
+
+    if not os.path.exists("sharding.pkl"):
+        # Create a dictionary of start points
+        interval_dict = {}
+        for i in range(len(interval_start_points) - 1):
+            interval_dict[interval_start_points[i]] = False
+
+        start = 93
+        end = 100
+
+        interval_dict[start] = True
+
+        pickle.dump(interval_dict, open("sharding.pkl", "wb"))
+    else:
+        interval_dict = pickle.load(open("sharding.pkl", "rb"))
+
+        start = None
+        end = None
+
+        for k in interval_dict.keys():
+            if not interval_dict[k]:
+                start = k
+                end = k + args.interval_size
+                interval_dict[k] = True
+                break
+
+        pickle.dump(interval_dict, open("sharding.pkl", "wb"))
 
     # Set the seed
     seed = 2
@@ -114,7 +143,7 @@ if __name__ == "__main__":
         training_config = TrainingConfig(0.0001, 50, batch_size)
 
         for k in unique_labels:
-            if models[k] is not None:
+            if models[k] is not None or k < start or k >= end:
                 continue
             print("Training model for class", k)
             # Create a copy of X
