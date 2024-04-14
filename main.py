@@ -164,7 +164,7 @@ if __name__ == "__main__":
             models[k] = model
 
             # Save the models
-            pickle.dump(models, open("models_{start}_{end}.pkl", "wb"))
+            pickle.dump(models, open(f"models_{start}_{end}.pkl", "wb"))
 
     # Now that we have the models
     if os.path.exists("explanations.pkl"):
