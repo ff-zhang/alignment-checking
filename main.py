@@ -90,7 +90,7 @@ if __name__ == "__main__":
             if models[k] is not None:
                 models[k] = models[k].to(device)
 
-        train_flag = any([models[k] is None for k in models.keys()])
+        train_flag = any(models[k] is None for k in models.keys())
 
     if not train_flag:
         print("All models trained")
@@ -102,7 +102,7 @@ if __name__ == "__main__":
         training_config = TrainingConfig(0.0001, 50, batch_size)
 
         for k in unique_labels:
-            if k in models.keys():
+            if models[k] is not None:
                 continue
             print("Training model for class", k)
             # Create a copy of X
