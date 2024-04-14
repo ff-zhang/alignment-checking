@@ -10,7 +10,19 @@ from model_config import *
 import os
 import lrp
 
+from argparse import ArgumentParser
+
 if __name__ == "__main__":
+
+    parser = ArgumentParser()
+    parser.add_argument("--start", type=int, default=0)
+    parser.add_argument("--end", type=int, default=550)
+
+    args = parser.parse_args()
+
+    start = args.start
+    end = args.end
+
     # Set the seed
     seed = 2
     torch.manual_seed(seed)
@@ -84,8 +96,8 @@ if __name__ == "__main__":
         models[k] = None
 
     # Check if the models have been saved
-    if os.path.exists("./models.pkl"):
-        models = pickle.load(open("models.pkl", "rb"))
+    if os.path.exists(f"./models{start}_{end}.pkl"):
+        models = pickle.load(open(f"./models{start}_{end}.pkl", "rb"))
         for k in models.keys():
             if models[k] is not None:
                 models[k] = models[k].to(device)
@@ -119,7 +131,7 @@ if __name__ == "__main__":
             models[k] = model
 
             # Save the models
-            pickle.dump(models, open("models.pkl", "wb"))
+            pickle.dump(models, open("models_{start}_{end}.pkl", "wb"))
 
     # Now that we have the models
     if os.path.exists("explanations.pkl"):
