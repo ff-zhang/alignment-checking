@@ -83,12 +83,14 @@ if __name__ == "__main__":
     for k in unique_labels:
         models[k] = None
 
+        pickle.dump(models, open("models.pkl", "wb"))
+
     # Check if the models have been saved
     if os.path.exists("./models.pkl"):
         models = pickle.load(open("models.pkl", "rb"))
-        for model in models:
-            if model is not None:
-                model.to(device)
+        for k in models.keys():
+            if models[k] is not None:
+                models[k] = models[k].to(device)
 
         train_flag = all([models[k] is not None for k in models.keys()])
 
