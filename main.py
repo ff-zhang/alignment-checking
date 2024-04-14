@@ -23,7 +23,7 @@ if __name__ == "__main__":
     interval_start_points = np.arange(100, 550, args.interval_size)
 
     # Add a new point at the start
-    interval_start_points = np.insert(interval_start_points, 93, 0)
+    interval_start_points = np.insert(interval_start_points, 0, 93)
 
     if not os.path.exists("sharding.pkl"):
         # Create a dictionary of start points
