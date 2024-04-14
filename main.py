@@ -80,16 +80,16 @@ if __name__ == "__main__":
     last_model_trained = None
     models = {}
 
+    for k in unique_labels:
+        models[k] = None
+
     # Check if the models have been saved
     if os.path.exists("models.pkl"):
         models = pickle.load(open("models.pkl", "rb"))
         for model in models:
             model.to(device)
 
-        # Get number of models
-        last_model_trained = models.keys()[-1]
-
-        train_flag = last_model_trained != unique_labels[-1]
+        train_flag = all([models[k] is not None for k in models.keys()])
 
     if not train_flag:
         print("All models trained")
@@ -99,9 +99,6 @@ if __name__ == "__main__":
         print("Models not found")
 
         training_config = TrainingConfig(0.0001, 50, batch_size)
-
-        if last_model_trained is None:
-            models = {}
 
         for k in unique_labels:
             if k in models.keys():
