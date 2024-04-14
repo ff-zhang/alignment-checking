@@ -76,21 +76,36 @@ if __name__ == "__main__":
 
     model_config = ModelConfig(model_format)
 
+    train_flag = True
+    last_model_trained = None
+    models = {}
+
     # Check if the models have been saved
     if os.path.exists("models.pkl"):
         models = pickle.load(open("models.pkl", "rb"))
         for model in models:
             model.to(device)
 
-        print("Models loaded")
+        # Get number of models
+        last_model_trained = models.keys()[-1]
 
+        train_flag = last_model_trained != unique_labels[-1]
+
+    if train_flag:
+        print("All models trained")
+
+        print("Models loaded")
     else:
         print("Models not found")
 
         training_config = TrainingConfig(0.0001, 50, batch_size)
-        
-        models = {}
+
+        if last_model_trained is None:
+            models = {}
+
         for k in unique_labels:
+            if k in models.keys():
+                continue
             print("Training model for class", k)
             # Create a copy of X
             temp_X = deepcopy(X)
@@ -105,8 +120,8 @@ if __name__ == "__main__":
             # Add to the model dictionary
             models[k] = model
 
-        # Save the models
-        pickle.dump(models, open("models.pkl", "wb"))
+            # Save the models
+            pickle.dump(models, open("models.pkl", "wb"))
 
     # Now that we have the models
     if os.path.exists("explanations.pkl"):
