@@ -83,8 +83,6 @@ if __name__ == "__main__":
     for k in unique_labels:
         models[k] = None
 
-        pickle.dump(models, open("models.pkl", "wb"))
-
     # Check if the models have been saved
     if os.path.exists("./models.pkl"):
         models = pickle.load(open("models.pkl", "rb"))
