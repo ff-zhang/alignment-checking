@@ -53,6 +53,8 @@ if __name__ == "__main__":
         if start is None:
             print("All intervals have been processed")
             exit()
+        else:
+            print("Processing interval", start, end)
 
         pickle.dump(interval_dict, open("sharding.pkl", "wb"))
 
@@ -129,8 +131,8 @@ if __name__ == "__main__":
         models[k] = None
 
     # Check if the models have been saved
-    if os.path.exists(f"./models{start}_{end}.pkl"):
-        models = pickle.load(open(f"./models{start}_{end}.pkl", "rb"))
+    if os.path.exists(f"./models_{start}_{end}.pkl"):
+        models = pickle.load(open(f"./models_{start}_{end}.pkl", "rb"))
         for k in models.keys():
             if models[k] is not None:
                 models[k] = models[k].to(device)
