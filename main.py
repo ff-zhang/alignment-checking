@@ -150,6 +150,7 @@ if __name__ == "__main__":
         
         for k in unique_labels:
             if models[k] is not None or k < start or k >= end:
+                print("Skipping class", k)
                 continue
             print("Training model for class", k)
             # Create a copy of X
