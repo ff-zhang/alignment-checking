@@ -50,6 +50,10 @@ if __name__ == "__main__":
                 interval_dict[k] = True
                 break
 
+        if start is None:
+            print("All intervals have been processed")
+            exit()
+
         pickle.dump(interval_dict, open("sharding.pkl", "wb"))
 
     # Set the seed
