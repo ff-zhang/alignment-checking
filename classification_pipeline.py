@@ -76,7 +76,7 @@ def train_model(model: nn.Module, X: torch.tensor, t: torch.tensor, training_con
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
-    weight = torch.tensor([500.0])
+    weight = torch.tensor([500.0]).to(device)
 
     if logits_loss:
         criterion = nn.BCEWithLogitsLoss(weight=weight)
@@ -89,8 +89,10 @@ def train_model(model: nn.Module, X: torch.tensor, t: torch.tensor, training_con
     t_val = torch.reshape(t_val, (-1, 1))
 
     # Cast to float
-    t_train = t_train.float()
-    t_val = t_val.float()
+    X_train = X_train.to(device)
+    X_val = X_val.to(device)
+    t_train = t_train.float().to(device)
+    t_val = t_val.float().to(device)
 
     train = []
     for i in range(len(X_train)):
@@ -100,14 +102,22 @@ def train_model(model: nn.Module, X: torch.tensor, t: torch.tensor, training_con
         val.append((X_val[i], t_val[i]))
 
     # Create dataloaders
-    train_loader = DataLoader(train, batch_size=batch_size, shuffle=True, pin_memory=True)
-    val_loader = DataLoader(val, batch_size=batch_size, shuffle=True, pin_memory=True)
+    train_loader = DataLoader(train, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val, batch_size=batch_size, shuffle=True)
 
     train_losses = []
     train_accuracies = []
 
     val_losses = []
     val_accuracies = []
+
+    # Print devices
+    print("Device: ", device)
+    print("X_train device: ", X_train.device)
+    print("X_val device: ", X_val.device)
+    print("t_train device: ", t_train.device)
+    print("t_val device: ", t_val.device)
+    print("Model device: ", next(model.parameters()).device)
 
     train_losses.append(criterion(model(X_train), t_train).item())
     val_losses.append(criterion(model(X_val), t_val).item())
