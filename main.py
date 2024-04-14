@@ -62,7 +62,7 @@ if __name__ == "__main__":
     batch_size = 64
 
     # First thing to do is load the data
-    _, data = pickle.load(open("./glove/clusters_550.pkl", "rb"))
+    _, data = pickle.load(open("./glove/kmeans_clusters_500.pkl", "rb"))
 
     # Checks if GPU(s) are available
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -145,7 +145,7 @@ if __name__ == "__main__":
         print("Models not found")
 
         training_config = TrainingConfig(0.0001, 50, batch_size)
-
+        
         for k in unique_labels:
             if models[k] is not None or k < start or k >= end:
                 continue
@@ -193,6 +193,6 @@ if __name__ == "__main__":
 
             explanation = X.grad
             explanations[k] = explanation
-            
+
         # Save the explanations
         pickle.dump(explanations, open("explanations.pkl", "wb"))
