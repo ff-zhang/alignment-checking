@@ -91,7 +91,7 @@ if __name__ == "__main__":
 
         train_flag = last_model_trained != unique_labels[-1]
 
-    if train_flag:
+    if not train_flag:
         print("All models trained")
 
         print("Models loaded")
