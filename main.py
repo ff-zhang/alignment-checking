@@ -20,10 +20,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Generate intervals starting from 100
-    interval_start_points = np.arange(100, 500, args.interval_size)
-
-    # Add a new point at the start
-    interval_start_points = np.insert(interval_start_points, 0, 93)
+    interval_start_points = np.arange(0, 500, args.interval_size)
 
     if not os.path.exists("sharding.pkl"):
         # Create a dictionary of start points
@@ -31,8 +28,8 @@ if __name__ == "__main__":
         for i in range(len(interval_start_points) - 1):
             interval_dict[interval_start_points[i]] = False
 
-        start = 93
-        end = 100
+        start = 0
+        end = 25
 
         interval_dict[start] = True
 
@@ -53,6 +50,8 @@ if __name__ == "__main__":
         if start is None:
             print("All intervals have been processed")
             exit()
+        else:
+            print("Processing interval", start, "to", end)
 
         pickle.dump(interval_dict, open("sharding.pkl", "wb"))
 
