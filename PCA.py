@@ -19,7 +19,7 @@ def extract_pca_features(representation: torch.Tensor, threshold: float = 0.95) 
     representation = representation.reshape(representation.shape[0], -1)
 
     # Scale the representation
-    representation = (representation - representation.mean(dim=0)) / representation.std(dim=0)
+    representation = (representation - representation.mean()) / representation.std()
 
     # Apply PCA to the representation
     pca = PCA(n_components=threshold, svd_solver='full')
