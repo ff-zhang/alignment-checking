@@ -94,7 +94,7 @@ if __name__ == "__main__":
     target = torch.tensor([1 if x == unique_labels[0] else 0 for x in targets])
 
     # Create the model
-    n = X.shape[0]
+    n = batch_size
     d = 50
     model = Projector(n, d, 3).to(device)
 
