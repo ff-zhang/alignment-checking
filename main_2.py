@@ -2,6 +2,7 @@ import torch
 import pickle
 
 from matplotlib import pyplot as plt
+from torch.utils.data import TensorDataset, DataLoader
 
 
 class SeparationLoss(torch.nn.Module):
@@ -64,6 +65,7 @@ class Projector(torch.nn.Module):
 
 if __name__ == "__main__":
     torch.manual_seed(2)
+    batch_size = 64
 
     plot = True
 
@@ -88,7 +90,8 @@ if __name__ == "__main__":
     unique_labels = list(set(targets))
 
     # One hot encode the targets for label 0
-    target = torch.tensor([1 if x == unique_labels[0] else 0 for x in targets]).to(device) # This is to test with only the first cluster
+    # This is to test with only the first cluster
+    target = torch.tensor([1 if x == unique_labels[0] else 0 for x in targets])
 
     # Create the model
     n = X.shape[0]
@@ -103,20 +106,23 @@ if __name__ == "__main__":
 
     losses = []
 
+    train_data = TensorDataset(X, target)
+    train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, pin_memory=True)
+
     # Train the model
     for epoch in range(100):
         optimizer.zero_grad()
-        # Stack X into a single tensor of n x d
-        X = X.to(device)
-        target = target.to(device)
+        for X, t in train_loader:
+            X = X.to(device)
+            targets = target.to(device)
+            _X = X.view(-1, batch_size * d)
 
-        input = X.view(-1, n * d)
+            output = model(_X)
+            loss = criterion(output, targets, X)
+            losses.append(loss)
+            loss.backward()
+            optimizer.step()
 
-        output = model(input)
-        loss = criterion(output, target, X)
-        losses.append(loss)
-        loss.backward()
-        optimizer.step()
         print(f"Epoch {epoch}: Loss: {loss.item()}")
 
         if plot:
