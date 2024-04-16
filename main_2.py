@@ -49,9 +49,9 @@ class Projector(torch.nn.Module):
     """
     def __init__(self, n, d, k):
         super(Projector, self).__init__()
-        self.fc1 = torch.nn.Linear(n * d, n * d * n * d)
-        self.fc2 = torch.nn.Linear(n * d * n * d, n * d * k)
-        self.fc3 = torch.nn.Linear(n * d * k, d * k)
+        self.fc1 = torch.nn.Linear(n * d, 2 * n * d)
+        self.fc2 = torch.nn.Linear(2 * n * d, 2 * n * k)
+        self.fc3 = torch.nn.Linear(2 * n * k, d * k)
         self.relu = torch.nn.ReLU()
 
     def forward(self, x):
