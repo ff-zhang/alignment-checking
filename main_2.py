@@ -6,13 +6,19 @@ from torch.utils.data import TensorDataset, DataLoader
 
 
 class SeparationLoss(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, k):
         super(SeparationLoss, self).__init__()
+        self.k = k
 
     def forward(self, x, t, y):
         # Y is a set of vectors that spans a k-subspace
         # y is a tensor of shape d x k where d is the dimension of the vectors and k is the number of vectors
         # Split x into 2 parts
+
+        k = self.k
+
+        #split y into d x k
+        y = y.view(d, k)
 
         vecs = x
         labels = t
@@ -27,6 +33,9 @@ class SeparationLoss(torch.nn.Module):
         # The projection of the vectors
         proj_vecs = proj_matrix @ vecs.T  # Transpose to get the d x n matrix
         # This product produces a matrix of shape d x n of the projected vectors
+
+        # Transpose the projected vectors to get a matrix of shape n x d
+        proj_vecs = proj_vecs.T
 
         # Measure how distinct the projected vectors are based on their label
         # Want to minimize distance between projected vectors of the same label and maximize distance between projected vectors of different labels
@@ -49,6 +58,9 @@ class Projector(torch.nn.Module):
     that span a <=k-subspace
     """
     def __init__(self, n, d, k):
+        self.n = n
+        self.d = d
+        self.k = k
         super(Projector, self).__init__()
         self.fc1 = torch.nn.Linear(n * d, n * d)
         self.fc2 = torch.nn.Linear(n * d, n * k)
@@ -96,10 +108,11 @@ if __name__ == "__main__":
     # Create the model
     n = batch_size
     d = 50
-    model = Projector(n, d, 3).to(device)
+    k = 3
+    model = Projector(n, d, k).to(device)
 
     # Create the loss function
-    criterion = SeparationLoss().to(device)
+    criterion = SeparationLoss(k).to(device)
 
     # Create the optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -114,11 +127,11 @@ if __name__ == "__main__":
         optimizer.zero_grad()
         for X, t in train_loader:
             X = X.to(device)
-            targets = target.to(device)
+            t = t.to(device)
             _X = X.view(-1, batch_size * d)
 
             output = model(_X)
-            loss = criterion(output, targets, X)
+            loss = criterion(X, t, output)
             losses.append(loss)
             loss.backward()
             optimizer.step()
