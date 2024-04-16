@@ -91,7 +91,9 @@ if __name__ == "__main__":
     target = torch.tensor([1 if x == unique_labels[0] else 0 for x in targets]).to(device) # This is to test with only the first cluster
 
     # Create the model
-    model = Projector(550, 50, 3).to(device)
+    n = X.shape[0]
+    d = 50
+    model = Projector(n, d, 3).to(device)
 
     # Create the loss function
     criterion = SeparationLoss().to(device)
@@ -108,7 +110,7 @@ if __name__ == "__main__":
         X = X.to(device)
         target = target.to(device)
 
-        input = X.view(-1, 550 * 50)
+        input = X.view(-1, n * d)
 
         output = model(input)
         loss = criterion(output, target, X)
