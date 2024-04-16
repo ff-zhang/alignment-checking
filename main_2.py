@@ -119,13 +119,17 @@ if __name__ == "__main__":
 
     losses = []
 
+    first_entry = X[0]
     train_data = TensorDataset(X, target)
     train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, pin_memory=True)
 
     # Train the model
-    for epoch in range(100):
+    for epoch in range(2):
         optimizer.zero_grad()
         for X, t in train_loader:
+            if X.shape[0] != batch_size:
+                # Pad x with the first entry
+                X = torch.cat([X, first_entry.repeat(batch_size - X.shape[0], 1)])
             X = X.to(device)
             t = t.to(device)
             _X = X.view(-1, batch_size * d)
