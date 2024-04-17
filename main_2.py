@@ -90,6 +90,10 @@ if __name__ == "__main__":
 
     plot = False
 
+    # Check if the /projectors directory exists
+    if not os.path.exists("./projectors"):
+        os.makedirs("./projectors")
+
     # Load the data about the clusters
     _, data = pickle.load(open("./glove/kmeans_clusters_500.pkl", "rb"))
 
@@ -141,8 +145,8 @@ if __name__ == "__main__":
         train_data = TensorDataset(X, target)
         train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, pin_memory=True)
 
-        if os.path.exists(f"./projector-{j}.pth"):
-            model.load_state_dict(torch.load(f"./projector-{j}.pth"))
+        if os.path.exists(f"./projectors/projector-{j}.pth"):
+            model.load_state_dict(torch.load(f"./projectors/projector-{j}.pth"))
         else:
             # Train the model
             for epoch in range(epochs):
@@ -171,7 +175,7 @@ if __name__ == "__main__":
                 plt.show()
 
             # Save the model
-            torch.save(model.state_dict(), f"./projector-{j}.pth")
+            torch.save(model.state_dict(), f"./projectors/projector-{j}.pth")
 
         # Test
 
@@ -216,5 +220,5 @@ if __name__ == "__main__":
             dict[i] = glove_50d_labels[closest_words]
 
         # Pickle the dictionary
-        with open(f"./closest_words-{j}.pkl", "wb") as f:
+        with open(f"./projectors/closest_words-{j}.pkl", "wb") as f:
             pickle.dump(dict, f)
