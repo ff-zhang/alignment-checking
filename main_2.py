@@ -111,6 +111,7 @@ if __name__ == "__main__":
     unique_labels = list(set(targets))
 
     for j in range(len(unique_labels)):
+        print("Training for label", j)
         # One hot encode the targets for label 0
         # This is to test with only the first cluster
         target = torch.tensor([1 if x == unique_labels[j] else 0 for x in targets])
@@ -197,7 +198,7 @@ if __name__ == "__main__":
         glove_50d_data = np.array(list(glove_50d.values()))
         glove_50d_labels = np.array(list(glove_50d.keys()))
 
-        print("Closest words for class 0")
+        print("Closest words for class ", j, ":")
         dict = {}
         for i in range(0, k):
             distances = pairwise_distances([avg_output[i].detach().numpy()], glove_50d_data, metric='cosine')
@@ -211,5 +212,3 @@ if __name__ == "__main__":
         # Pickle the dictionary
         with open(f"./closest_words-{j}.pkl", "wb") as f:
             pickle.dump(dict, f)
-
-        print(avg_output.shape)
