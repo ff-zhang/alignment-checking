@@ -1,3 +1,5 @@
+import copy
+
 import torch
 import pickle
 
@@ -86,7 +88,7 @@ if __name__ == "__main__":
     d = 50
     k = 3
     lr = 0.0001
-    epochs = 5
+    epochs = 1
 
     plot = False
 
@@ -110,12 +112,15 @@ if __name__ == "__main__":
             temp = torch.reshape(torch.Tensor([key] * len(data[key])), (-1, 1))
             labels = torch.cat([labels, temp])
 
+    X_og = copy.deepcopy(X)
+
     # Create the set of unique labels
     targets = [x.item() for x in labels]
     unique_labels = list(set(targets))
 
     for j in range(len(unique_labels)):
         print("Training for label", j)
+        X = copy.deepcopy(X_og)
         # One hot encode the targets for label 0
         # This is to test with only the first cluster
         target = torch.tensor([1 if x == unique_labels[j] else 0 for x in targets])
