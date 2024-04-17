@@ -9,6 +9,8 @@ from torch.utils.data import TensorDataset, DataLoader
 from sklearn.metrics import pairwise_distances
 import numpy as np
 
+import wandb
+
 import os
 
 class SeparationLoss(torch.nn.Module):
@@ -224,7 +226,8 @@ if __name__ == "__main__":
             for word in glove_50d_labels[closest_words]:
                 print(word)
             print("at distance", distances[0][closest_words])
-            dict[i] = glove_50d_labels[closest_words]
+            dict[i] = {"word": glove_50d_labels[closest_words], "distance": distances[0][closest_words], "glove vector":
+                glove_50d_data[closest_words], "produced vector": avg_output[i].detach().numpy()}
 
         # Pickle the dictionary
         with open(f"./projectors/closest_words-{j}.pkl", "wb") as f:
