@@ -127,10 +127,16 @@ if __name__ == "__main__":
 
         losses = []
 
+        # Collect the entries of X with label j
+        X_pad = torch.tensor([])
+        for i in range(len(X)):
+            if target[i] == 1:
+                X_pad = torch.cat([X_pad, X[i].reshape(1, -1)])
+
         batch_remainder = len(X) % batch_size
         padding = torch.tensor([])
         for i in range(batch_size - batch_remainder):
-            padding = torch.cat([padding, (X[i]).reshape(1, -1)])
+            padding = torch.cat([padding, (X_pad[i]).reshape(1, -1)])
 
         train_data = TensorDataset(X, target)
         train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, pin_memory=True)
