@@ -86,7 +86,7 @@ if __name__ == "__main__":
     batch_size = 128
     n = batch_size
     d = 50
-    k = 3
+    k = 2
     lr = 0.0001
     epochs = 5
 
