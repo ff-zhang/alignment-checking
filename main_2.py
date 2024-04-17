@@ -4,6 +4,7 @@ import pickle
 from matplotlib import pyplot as plt
 from torch.utils.data import TensorDataset, DataLoader
 
+import os
 
 class SeparationLoss(torch.nn.Module):
     def __init__(self, k):
@@ -115,7 +116,7 @@ if __name__ == "__main__":
     criterion = SeparationLoss(k).to(device)
 
     # Create the optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
 
     losses = []
 
@@ -123,28 +124,54 @@ if __name__ == "__main__":
     train_data = TensorDataset(X, target)
     train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, pin_memory=True)
 
-    # Train the model
-    for epoch in range(2):
-        optimizer.zero_grad()
-        for X, t in train_loader:
-            if X.shape[0] != batch_size:
-                # Pad x with the first entry
-                X = torch.cat([X, first_entry.repeat(batch_size - X.shape[0], 1)])
-            X = X.to(device)
-            t = t.to(device)
-            _X = X.view(-1, batch_size * d)
+    if (os.path.exists("./projector.pth")):
+        model.load_state_dict(torch.load("./projector.pth"))
+    else:
+        # Train the model
+        for epoch in range(10):
+            optimizer.zero_grad()
+            for X, t in train_loader:
+                if X.shape[0] != batch_size:
+                    # Pad x with the first entry
+                    X = torch.cat([X, first_entry.repeat(batch_size - X.shape[0], 1)])
+                X = X.to(device)
+                t = t.to(device)
+                _X = X.view(-1, batch_size * d)
 
-            output = model(_X)
-            loss = criterion(X, t, output)
-            losses.append(loss)
-            loss.backward()
-            optimizer.step()
+                output = model(_X)
+                loss = criterion(X, t, output)
+                losses.append(loss)
+                loss.backward()
+                optimizer.step()
 
-        print(f"Epoch {epoch}: Loss: {loss.item()}")
+            print(f"Epoch {epoch}: Loss: {loss.item()}")
 
         if plot:
+            for i in range(len(losses)):
+                losses[i] = losses[i].detach().numpy()
             plt.plot(losses)
             plt.show()
 
-    # Save the model
-    torch.save(model.state_dict(), "./projector.pth")
+        # Save the model
+        torch.save(model.state_dict(), "./projector.pth")
+
+    # Test
+
+    # Run through the entire loader and collect the outputs
+    outputs = []
+    for X, t in train_loader:
+        if X.shape[0] != batch_size:
+            # Pad x with the first entry
+            X = torch.cat([X, first_entry.repeat(batch_size - X.shape[0], 1)])
+        X = X.to(device)
+        t = t.to(device)
+        _X = X.view(-1, batch_size * d)
+        output = model(_X)
+        # Reshape the output to be of shape k x d
+        output = output.view(k, d)
+        outputs.append(output)
+
+    # Average the outputs
+    avg_output = torch.mean(torch.stack(outputs), dim=0)
+
+    print(avg_output.shape)
