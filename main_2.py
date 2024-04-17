@@ -13,6 +13,7 @@ import wandb
 
 import os
 
+
 class SeparationLoss(torch.nn.Module):
     def __init__(self, k):
         super(SeparationLoss, self).__init__()
@@ -25,7 +26,7 @@ class SeparationLoss(torch.nn.Module):
 
         k = self.k
 
-        #split y into d x k
+        # split y into d x k
         y = y.view(d, k)
 
         vecs = x
@@ -59,12 +60,14 @@ class SeparationLoss(torch.nn.Module):
 
         return loss
 
+
 class Projector(torch.nn.Module):
     """
     This class takes in a vector of dimension n x d where n is the number of vectors
     and outputs a vector of size d x k where k is the number of vectors
     that span a <=k-subspace
     """
+
     def __init__(self, n, d, k):
         self.n = n
         self.d = d
@@ -82,6 +85,7 @@ class Projector(torch.nn.Module):
         x = self.relu(x)
         x = self.fc3(x)
         return x
+
 
 if __name__ == "__main__":
     torch.manual_seed(2)
@@ -209,7 +213,7 @@ if __name__ == "__main__":
             outputs.append(output)
 
         # Average the outputs
-        avg_output = torch.sum(torch.stack(outputs), dim=0)
+        avg_output = torch.mean(torch.stack(outputs), dim=0)
 
         # load 50d glove embeddings
         with open('glove/glove_50d.pkl', 'rb') as f:
