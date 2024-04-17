@@ -86,8 +86,9 @@ if __name__ == "__main__":
     d = 50
     k = 3
     lr = 0.0001
+    epochs = 50
 
-    plot = True
+    plot = False
 
     # Load the data about the clusters
     _, data = pickle.load(open("./glove/kmeans_clusters_500.pkl", "rb"))
@@ -96,13 +97,13 @@ if __name__ == "__main__":
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     X, labels = None, None
-    for k in data.keys():
+    for key in data.keys():
         if X is None:
-            X = torch.Tensor(data[k])
-            labels = torch.reshape(torch.Tensor([k] * len(data[k])), (-1, 1))
+            X = torch.Tensor(data[key])
+            labels = torch.reshape(torch.Tensor([key] * len(data[key])), (-1, 1))
         else:
-            X = torch.cat([X, torch.Tensor(data[k])])
-            temp = torch.reshape(torch.Tensor([k] * len(data[k])), (-1, 1))
+            X = torch.cat([X, torch.Tensor(data[key])])
+            temp = torch.reshape(torch.Tensor([key] * len(data[key])), (-1, 1))
             labels = torch.cat([labels, temp])
 
     # Create the set of unique labels
@@ -128,7 +129,7 @@ if __name__ == "__main__":
         batch_remainder = len(X) % batch_size
         padding = torch.tensor([])
         for i in range(batch_size - batch_remainder):
-            padding = torch.cat([padding, X[i]])
+            padding = torch.cat([padding, (X[i]).reshape(1, -1)])
 
         train_data = TensorDataset(X, target)
         train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, pin_memory=True)
@@ -137,7 +138,7 @@ if __name__ == "__main__":
             model.load_state_dict(torch.load(f"./projector-{j}.pth"))
         else:
             # Train the model
-            for epoch in range(10):
+            for epoch in range(epochs):
                 optimizer.zero_grad()
                 for X, t in train_loader:
                     if X.shape[0] != batch_size:
@@ -149,11 +150,12 @@ if __name__ == "__main__":
 
                     output = model(_X)
                     loss = criterion(X, t, output)
+                    print(f"Epoch [{epoch}]: Loss: {loss.item()}")
                     losses.append(loss)
                     loss.backward()
                     optimizer.step()
 
-                print(f"Epoch {epoch}: Loss: {loss.item()}")
+                print(f"\n Epoch Complete {epoch}: Loss: {loss.item()} \n")
 
             if plot:
                 for i in range(len(losses)):
