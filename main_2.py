@@ -88,7 +88,7 @@ if __name__ == "__main__":
     d = 50
     k = 3
     lr = 0.0001
-    epochs = 1
+    epochs = 5
 
     plot = False
 
@@ -119,6 +119,8 @@ if __name__ == "__main__":
     unique_labels = list(set(targets))
 
     for j in range(len(unique_labels)):
+        if os.path.exists(f"./projectors/projector-{j}.pth") and os.path.exists(f"./projectors/closest_words-{j}.pkl"):
+            continue
         print("Training for label", j)
         X = copy.deepcopy(X_og)
         # One hot encode the targets for label 0
