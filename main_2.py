@@ -124,6 +124,11 @@ if __name__ == "__main__":
         if os.path.exists(f"./projectors/projector-{j}.pth") and os.path.exists(f"./projectors/closest_words-{j}.pkl"):
             continue
         print("Training for label", j)
+
+        # Initialize wandb
+        run = wandb.init(project="alignment-checking")
+        wandb.config.update({"batch_size": batch_size, "n": n, "d": d, "k": k, "lr": lr, "epochs": epochs})
+
         X = copy.deepcopy(X_og)
         # One hot encode the targets for label 0
         # This is to test with only the first cluster
@@ -171,6 +176,7 @@ if __name__ == "__main__":
                     output = model(_X)
                     loss = criterion(X, t, output)
                     print(f"Epoch [{epoch}]: Loss: {loss.item()}")
+                    wandb.log({"loss": loss.item()}) # log to wandb
                     losses.append(loss)
                     loss.backward()
                     optimizer.step()
