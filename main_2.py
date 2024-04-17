@@ -4,6 +4,9 @@ import pickle
 from matplotlib import pyplot as plt
 from torch.utils.data import TensorDataset, DataLoader
 
+from sklearn.metrics import pairwise_distances
+import numpy as np
+
 import os
 
 class SeparationLoss(torch.nn.Module):
@@ -79,6 +82,10 @@ class Projector(torch.nn.Module):
 if __name__ == "__main__":
     torch.manual_seed(2)
     batch_size = 64
+    n = batch_size
+    d = 50
+    k = 3
+    lr = 0.0001
 
     plot = True
 
@@ -102,76 +109,105 @@ if __name__ == "__main__":
     targets = [x.item() for x in labels]
     unique_labels = list(set(targets))
 
-    # One hot encode the targets for label 0
-    # This is to test with only the first cluster
-    target = torch.tensor([1 if x == unique_labels[0] else 0 for x in targets])
+    for j in range(len(unique_labels)):
+        # One hot encode the targets for label 0
+        # This is to test with only the first cluster
+        target = torch.tensor([1 if x == unique_labels[j] else 0 for x in targets])
 
-    # Create the model
-    n = batch_size
-    d = 50
-    k = 3
-    model = Projector(n, d, k).to(device)
+        # Create the model
+        model = Projector(n, d, k).to(device)
 
-    # Create the loss function
-    criterion = SeparationLoss(k).to(device)
+        # Create the loss function
+        criterion = SeparationLoss(k).to(device)
 
-    # Create the optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+        # Create the optimizer
+        optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
-    losses = []
+        losses = []
 
-    first_entry = X[0]
-    train_data = TensorDataset(X, target)
-    train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, pin_memory=True)
+        batch_remainder = len(X) % batch_size
+        padding = torch.tensor([])
+        for i in range(batch_size - batch_remainder):
+            padding = torch.cat([padding, X[i]])
 
-    if (os.path.exists("./projector.pth")):
-        model.load_state_dict(torch.load("./projector.pth"))
-    else:
-        # Train the model
-        for epoch in range(10):
-            optimizer.zero_grad()
-            for X, t in train_loader:
-                if X.shape[0] != batch_size:
-                    # Pad x with the first entry
-                    X = torch.cat([X, first_entry.repeat(batch_size - X.shape[0], 1)])
-                X = X.to(device)
-                t = t.to(device)
-                _X = X.view(-1, batch_size * d)
+        train_data = TensorDataset(X, target)
+        train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, pin_memory=True)
 
-                output = model(_X)
-                loss = criterion(X, t, output)
-                losses.append(loss)
-                loss.backward()
-                optimizer.step()
+        if os.path.exists(f"./projector-{j}.pth"):
+            model.load_state_dict(torch.load(f"./projector-{j}.pth"))
+        else:
+            # Train the model
+            for epoch in range(10):
+                optimizer.zero_grad()
+                for X, t in train_loader:
+                    if X.shape[0] != batch_size:
+                        # Pad x with the padding
+                        X = torch.cat([X, padding])
+                    X = X.to(device)
+                    t = t.to(device)
+                    _X = X.view(-1, batch_size * d)
 
-            print(f"Epoch {epoch}: Loss: {loss.item()}")
+                    output = model(_X)
+                    loss = criterion(X, t, output)
+                    losses.append(loss)
+                    loss.backward()
+                    optimizer.step()
 
-        if plot:
-            for i in range(len(losses)):
-                losses[i] = losses[i].detach().numpy()
-            plt.plot(losses)
-            plt.show()
+                print(f"Epoch {epoch}: Loss: {loss.item()}")
 
-        # Save the model
-        torch.save(model.state_dict(), "./projector.pth")
+            if plot:
+                for i in range(len(losses)):
+                    losses[i] = losses[i].detach().numpy()
+                plt.plot(losses)
+                plt.show()
 
-    # Test
+            # Save the model
+            torch.save(model.state_dict(), f"./projector-{j}.pth")
 
-    # Run through the entire loader and collect the outputs
-    outputs = []
-    for X, t in train_loader:
-        if X.shape[0] != batch_size:
-            # Pad x with the first entry
-            X = torch.cat([X, first_entry.repeat(batch_size - X.shape[0], 1)])
-        X = X.to(device)
-        t = t.to(device)
-        _X = X.view(-1, batch_size * d)
-        output = model(_X)
-        # Reshape the output to be of shape k x d
-        output = output.view(k, d)
-        outputs.append(output)
+        # Test
 
-    # Average the outputs
-    avg_output = torch.mean(torch.stack(outputs), dim=0)
+        # Run through the entire loader and collect the outputs
+        outputs = []
+        for X, t in train_loader:
+            if X.shape[0] != batch_size:
+                # Pad x with the first entry
+                X = torch.cat([X, padding])
+            X = X.to(device)
+            t = t.to(device)
+            _X = X.view(-1, batch_size * d)
+            output = model(_X)
+            # Reshape the output to be of shape k x d
+            output = output.view(k, d)
+            outputs.append(output)
 
-    print(avg_output.shape)
+        # Average the outputs
+        avg_output = torch.sum(torch.stack(outputs), dim=0)
+
+        # load 50d glove embeddings
+        with open('glove/glove_50d.pkl', 'rb') as f:
+            glove_50d = pickle.load(f)
+
+        print(len(glove_50d))
+
+        # reverse the mapping
+        glove_50d_inv = {tuple(v): k for k, v in glove_50d.items()}
+
+        glove_50d_data = np.array(list(glove_50d.values()))
+        glove_50d_labels = np.array(list(glove_50d.keys()))
+
+        print("Closest words for class 0")
+        dict = {}
+        for i in range(0, k):
+            distances = pairwise_distances([avg_output[i].detach().numpy()], glove_50d_data, metric='cosine')
+            closest_words = np.argsort(distances)[0][:1]
+            print("Closest words to dimension", i, "is:")
+            for word in glove_50d_labels[closest_words]:
+                print(word)
+            print("at distance", distances[0][closest_words])
+            dict[i] = glove_50d_labels[closest_words]
+
+        # Pickle the dictionary
+        with open(f"./closest_words-{j}.pkl", "wb") as f:
+            pickle.dump(dict, f)
+
+        print(avg_output.shape)
