@@ -15,9 +15,17 @@ import os
 
 
 class SeparationLoss(torch.nn.Module):
-    def __init__(self, k):
+    def __init__(self, k, project_to_embed=False):
         super(SeparationLoss, self).__init__()
         self.k = k
+        self.project_to_embed = project_to_embed
+        if self.project_to_embed:
+            # load 50d glove embeddings
+            with open('glove/glove_50d.pkl', 'rb') as f:
+                glove_50d = pickle.load(f)
+
+            self.glove_50d_data = np.array(list(glove_50d.values()))
+            self.glove_50d_labels = np.array(list(glove_50d.keys()))
 
     def forward(self, x, t, y):
         # Y is a set of vectors that spans a k-subspace
@@ -28,6 +36,27 @@ class SeparationLoss(torch.nn.Module):
 
         # split y into d x k
         y = y.view(d, k)
+
+        if self.project_to_embed:
+            # Project the predictions y to their closest embedding vector
+            # This is done by finding the closest embedding vector to each prediction
+
+            temp = []
+
+            y = y.T
+
+            for i in range(0, k):
+                distances = []
+                for vector in self.glove_50d_data:
+                    vector = torch.tensor(vector)
+                    dist = torch.cosine_similarity(y[i], vector, dim=0)
+                    distances.append(abs(dist))
+                distances = torch.tensor(distances)
+                closest_word = torch.argsort(distances, descending=True)[0]
+
+                temp.append(torch.tensor(self.glove_50d_data[closest_word]))
+
+            y = torch.tensor(temp).T
 
         vecs = x
         labels = t
@@ -230,8 +259,13 @@ if __name__ == "__main__":
         print("Closest words for class ", j, ":")
         dict = {}
         for i in range(0, k):
-            distances = pairwise_distances([avg_output[i].detach().numpy()], glove_50d_data, metric='cosine')
-            closest_words = np.argsort(distances)[0][:1]
+            distances = []
+            for vector in glove_50d_data:
+                vector = torch.tensor(vector)
+                dist = torch.cosine_similarity(avg_output[i], vector, dim=0)
+                distances.append(abs(dist))
+            distances = torch.tensor(distances)
+            closest_words = torch.argsort(distances, descending=True)[0]
             print("Closest words to dimension", i, "is:")
             for word in glove_50d_labels[closest_words]:
                 print(word)
