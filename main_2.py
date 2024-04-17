@@ -81,12 +81,12 @@ class Projector(torch.nn.Module):
 
 if __name__ == "__main__":
     torch.manual_seed(2)
-    batch_size = 256
+    batch_size = 128
     n = batch_size
     d = 50
     k = 3
     lr = 0.0001
-    epochs = 50
+    epochs = 5
 
     plot = False
 
