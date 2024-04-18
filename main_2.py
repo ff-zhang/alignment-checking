@@ -336,3 +336,5 @@ if __name__ == "__main__":
         # Pickle the dictionary
         with open(save_dir + f"/closest_words-{j}.pkl", "wb") as f:
             pickle.dump(dict, f)
+
+        wandb.finish()
