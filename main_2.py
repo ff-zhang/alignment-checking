@@ -48,14 +48,13 @@ class SeparationLoss(torch.nn.Module):
 
         k = self.k
 
-        # ensure same device
-        self.glove_50d_data = self.glove_50d_data.to(x.device)
-        y = y.to(x.device)
-
         # split y into d x k
         y = y.view(d, k)
 
         if self.project_to_embed:
+            # ensure same device
+            self.glove_50d_data = self.glove_50d_data.to(x.device)
+            y = y.to(x.device)
             # Project the predictions y to their closest embedding vector
             # This is done by finding the closest embedding vector to each prediction
 
@@ -226,7 +225,7 @@ if __name__ == "__main__":
         sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights))
 
         train_data = TensorDataset(X, target)
-        train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, sampler=sampler, pin_memory=True)
+        train_loader = DataLoader(train_data, batch_size=batch_size, sampler=sampler, pin_memory=True)
 
         if os.path.exists(save_dir + f"/projector-{j}.pth"):
             model.load_state_dict(torch.load(save_dir + f"/projector-{j}.pth"))
