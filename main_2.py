@@ -38,7 +38,7 @@ class SeparationLoss(torch.nn.Module):
             with open('glove/glove_50d.pkl', 'rb') as f:
                 glove_50d = pickle.load(f)
 
-            self.glove_50d_data = np.array(list(glove_50d.values()))
+            self.glove_50d_data = torch.tensor(np.array(list(glove_50d.values())))
             self.glove_50d_labels = np.array(list(glove_50d.keys()))
 
     def forward(self, x, t, y):
@@ -47,6 +47,10 @@ class SeparationLoss(torch.nn.Module):
         # Split x into 2 parts
 
         k = self.k
+
+        # ensure same device
+        self.glove_50d_data = self.glove_50d_data.to(x.device)
+        y = y.to(x.device)
 
         # split y into d x k
         y = y.view(d, k)
@@ -62,14 +66,14 @@ class SeparationLoss(torch.nn.Module):
             for i in range(0, k):
                 distances = []
                 for vector in self.glove_50d_data:
-                    vector = torch.tensor(vector)
                     dist = torch.cosine_similarity(y[i], vector, dim=0)
                     distances.append(abs(dist))
                 distances = torch.tensor(distances)
                 closest_word = torch.argsort(distances, descending=True)[0]
 
                 # temp = torch.cat([temp, torch.tensor(self.glove_50d_data[closest_word]).reshape(1, -1)])
-                y[i] = torch.tensor(self.glove_50d_data[closest_word])
+                # y[i] = torch.tensor(self.glove_50d_data[closest_word])
+                y[i] = (self.glove_50d_data[closest_word])
 
             # y = temp.T
             y = y.T
@@ -162,6 +166,7 @@ if __name__ == "__main__":
 
     # Check if GPU(s) are available
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print('Using device:', device)
 
     X, labels = None, None
     for key in data.keys():
