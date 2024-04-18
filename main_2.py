@@ -179,7 +179,7 @@ if __name__ == "__main__":
         model = Projector(n, d, k).to(device)
 
         # Create the loss function
-        criterion = SeparationLoss(k, True).to(device)
+        criterion = SeparationLoss(k, project_to_embed).to(device)
 
         # Create the optimizer
         optimizer = torch.optim.Adam(model.parameters(), lr=lr)
