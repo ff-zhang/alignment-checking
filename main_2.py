@@ -14,6 +14,20 @@ import wandb
 import os
 
 
+def make_weights_for_balanced_classes(images, nclasses):
+    count = [0] * nclasses
+    for item in images:
+        count[item[1]] += 1
+    weight_per_class = [0.] * nclasses
+    N = float(sum(count))
+    for i in range(nclasses):
+        weight_per_class[i] = N / float(count[i])
+    weight = [0] * len(images)
+    for idx, val in enumerate(images):
+        weight[idx] = weight_per_class[val[1]]
+    return weight
+
+
 class SeparationLoss(torch.nn.Module):
     def __init__(self, k, project_to_embed=False):
         super(SeparationLoss, self).__init__()
@@ -77,15 +91,19 @@ class SeparationLoss(torch.nn.Module):
         # Transpose the projected vectors to get a matrix of shape n x d
         proj_vecs = proj_vecs.T
 
+        # Reduce the projected vectors to a matrix of shape n x k
+        proj_vecs = proj_vecs @ y
+
         # Measure how distinct the projected vectors are based on their label
         # Want to minimize distance between projected vectors of the same label and maximize distance between projected vectors of different labels
 
         loss = 0
         for i in range(len(labels)):
             for j in range(i + 1, len(labels)):
-                dist = torch.norm(proj_vecs[i] - proj_vecs[j])
+                dist = torch.norm(
+                    proj_vecs[i] - proj_vecs[j])  # Think about changing to adding the loss only if they are both 1
                 if labels[i] == labels[j]:
-                    loss += dist
+                    loss += (labels[i] + 0.1) * dist
                 else:
                     loss -= dist
 
@@ -120,13 +138,13 @@ class Projector(torch.nn.Module):
 
 if __name__ == "__main__":
     torch.manual_seed(2)
-    batch_size = 128
+    batch_size = 64
     n = batch_size
     d = 50
-    k = 2
+    K = 2
     lr = 0.0001
-    epochs = 1
-    project_to_embed = True
+    epochs = 10
+    project_to_embed = False
 
     if project_to_embed:
         save_dir = "./projectors_embed"
@@ -168,7 +186,7 @@ if __name__ == "__main__":
 
         # Initialize wandb
         run = wandb.init(project="alignment-checking")
-        wandb.config.update({"batch_size": batch_size, "n": n, "d": d, "k": k, "lr": lr, "epochs": epochs})
+        wandb.config.update({"batch_size": batch_size, "n": n, "d": d, "k": K, "lr": lr, "epochs": epochs})
 
         X = copy.deepcopy(X_og)
         # One hot encode the targets for label 0
@@ -176,10 +194,10 @@ if __name__ == "__main__":
         target = torch.tensor([1 if x == unique_labels[j] else 0 for x in targets])
 
         # Create the model
-        model = Projector(n, d, k).to(device)
+        model = Projector(n, d, K).to(device)
 
         # Create the loss function
-        criterion = SeparationLoss(k, project_to_embed).to(device)
+        criterion = SeparationLoss(K, project_to_embed).to(device)
 
         # Create the optimizer
         optimizer = torch.optim.Adam(model.parameters(), lr=lr)
@@ -197,8 +215,13 @@ if __name__ == "__main__":
         for i in range(batch_size - batch_remainder):
             padding = torch.cat([padding, (X_pad[i]).reshape(1, -1)])
 
+        weights = make_weights_for_balanced_classes(list(zip(X, target)), 2)
+        weights = torch.DoubleTensor(weights)
+
+        sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights))
+
         train_data = TensorDataset(X, target)
-        train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, pin_memory=True)
+        train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, sampler=sampler, pin_memory=True)
 
         if os.path.exists(save_dir + f"/projector-{j}.pth"):
             model.load_state_dict(torch.load(save_dir + f"/projector-{j}.pth"))
@@ -217,7 +240,7 @@ if __name__ == "__main__":
                     output = model(_X)
                     loss = criterion(X, t, output)
                     print(f"Epoch [{epoch}]: Loss: {loss.item()}")
-                    wandb.log({"loss": loss.item()}) # log to wandb
+                    wandb.log({"loss": loss.item()})  # log to wandb
                     losses.append(loss)
                     loss.backward()
                     optimizer.step()
@@ -246,7 +269,7 @@ if __name__ == "__main__":
             _X = X.view(-1, batch_size * d)
             output = model(_X)
             # Reshape the output to be of shape k x d
-            output = output.view(k, d)
+            output = output.view(K, d)
             outputs.append(output)
 
         # Average the outputs
@@ -266,7 +289,7 @@ if __name__ == "__main__":
 
         print("Closest words for class ", j, ":")
         dict = {}
-        for i in range(0, k):
+        for i in range(0, K):
             distances = []
             for vector in glove_50d_data:
                 vector = torch.tensor(vector)
@@ -275,11 +298,15 @@ if __name__ == "__main__":
             distances = torch.tensor(distances)
             closest_words = torch.argsort(distances, descending=True)[0]
             print("Closest words to dimension", i, "is:")
-            for word in glove_50d_labels[closest_words]:
-                print(word)
-            print("at distance", distances[0][closest_words])
-            dict[i] = {"word": glove_50d_labels[closest_words], "distance": distances[0][closest_words], "glove vector":
-                glove_50d_data[closest_words], "produced vector": avg_output[i].detach().numpy()}
+            if (len(glove_50d_labels[closest_words]) > 1):
+                for word in glove_50d_labels[closest_words]:
+                    print(word)
+            else:
+                print(glove_50d_labels[closest_words])
+            print("at distance", distances[closest_words].item())
+            dict[i] = {"word": glove_50d_labels[closest_words], "distance": distances[closest_words].item(),
+                       "glove vector":
+                           glove_50d_data[closest_words], "produced vector": avg_output[i].detach().numpy()}
 
         # Pickle the dictionary
         with open(save_dir + f"/closest_words-{j}.pkl", "wb") as f:
