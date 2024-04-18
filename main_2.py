@@ -41,7 +41,7 @@ class SeparationLoss(torch.nn.Module):
             # Project the predictions y to their closest embedding vector
             # This is done by finding the closest embedding vector to each prediction
 
-            temp = []
+            temp = torch.tensor([])
 
             y = y.T
 
@@ -54,9 +54,11 @@ class SeparationLoss(torch.nn.Module):
                 distances = torch.tensor(distances)
                 closest_word = torch.argsort(distances, descending=True)[0]
 
-                temp.append(torch.tensor(self.glove_50d_data[closest_word]))
+                # temp = torch.cat([temp, torch.tensor(self.glove_50d_data[closest_word]).reshape(1, -1)])
+                y[i] = torch.tensor(self.glove_50d_data[closest_word])
 
-            y = torch.tensor(temp).T
+            # y = temp.T
+            y = y.T
 
         vecs = x
         labels = t
@@ -123,13 +125,19 @@ if __name__ == "__main__":
     d = 50
     k = 2
     lr = 0.0001
-    epochs = 5
+    epochs = 1
+    project_to_embed = True
 
-    plot = False
+    if project_to_embed:
+        save_dir = "./projectors_embed"
+    else:
+        save_dir = "./projectors"
+
+    plot = True
 
     # Check if the /projectors directory exists
-    if not os.path.exists("./projectors"):
-        os.makedirs("./projectors")
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
 
     # Load the data about the clusters
     _, data = pickle.load(open("./glove/kmeans_clusters_500.pkl", "rb"))
@@ -154,7 +162,7 @@ if __name__ == "__main__":
     unique_labels = list(set(targets))
 
     for j in range(len(unique_labels)):
-        if os.path.exists(f"./projectors/projector-{j}.pth") and os.path.exists(f"./projectors/closest_words-{j}.pkl"):
+        if os.path.exists(save_dir + f"/projector-{j}.pth") and os.path.exists(save_dir + f"/closest_words-{j}.pkl"):
             continue
         print("Training for label", j)
 
@@ -171,7 +179,7 @@ if __name__ == "__main__":
         model = Projector(n, d, k).to(device)
 
         # Create the loss function
-        criterion = SeparationLoss(k).to(device)
+        criterion = SeparationLoss(k, True).to(device)
 
         # Create the optimizer
         optimizer = torch.optim.Adam(model.parameters(), lr=lr)
@@ -192,8 +200,8 @@ if __name__ == "__main__":
         train_data = TensorDataset(X, target)
         train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, pin_memory=True)
 
-        if os.path.exists(f"./projectors/projector-{j}.pth"):
-            model.load_state_dict(torch.load(f"./projectors/projector-{j}.pth"))
+        if os.path.exists(save_dir + f"/projector-{j}.pth"):
+            model.load_state_dict(torch.load(save_dir + f"/projector-{j}.pth"))
         else:
             # Train the model
             for epoch in range(epochs):
@@ -223,7 +231,7 @@ if __name__ == "__main__":
                 plt.show()
 
             # Save the model
-            torch.save(model.state_dict(), f"./projectors/projector-{j}.pth")
+            torch.save(model.state_dict(), save_dir + f"/projector-{j}.pth")
 
         # Test
 
@@ -274,5 +282,5 @@ if __name__ == "__main__":
                 glove_50d_data[closest_words], "produced vector": avg_output[i].detach().numpy()}
 
         # Pickle the dictionary
-        with open(f"./projectors/closest_words-{j}.pkl", "wb") as f:
+        with open(save_dir + f"/closest_words-{j}.pkl", "wb") as f:
             pickle.dump(dict, f)
