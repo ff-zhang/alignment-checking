@@ -107,7 +107,7 @@ class SeparationLoss(torch.nn.Module):
                 dist = torch.norm(
                     proj_vecs[i] - proj_vecs[j])  # Think about changing to adding the loss only if they are both 1
                 if labels[i] == labels[j] and self.mode == "intra":
-                    loss += torch.tensor((labels[i]) * dist * dist)
+                    loss += torch.tensor(labels[i] * dist, dtype=torch.float32, requires_grad=True)
                 elif labels[i] != labels[j] and self.mode == "inter":
                     loss -= dist
                 else:
@@ -149,7 +149,7 @@ if __name__ == "__main__":
     d = 50
     K = 2
     lr = 0.0001
-    epochs = 1
+    epochs = 5
     project_to_embed = False
 
     if project_to_embed:
@@ -253,22 +253,22 @@ if __name__ == "__main__":
                     loss.backward()
                     optimizer.step()
 
-                for X, t in train_loader:
-                    optimizer.zero_grad()
-                    if X.shape[0] != batch_size:
-                        # Pad x with the padding
-                        X = torch.cat([X, padding])
-                    X = X.to(device)
-                    t = t.to(device)
-                    _X = X.view(-1, batch_size * d)
-
-                    output = model(_X)
-                    loss = criterion_intra(X, t, output)
-                    print(f"Epoch [{epoch}]: Loss: {loss.item()}")
-                    wandb.log({"loss": loss.item()})  # log to wandb
-                    losses.append(loss)
-                    loss.backward()
-                    optimizer.step()
+                # for X, t in train_loader:
+                #     optimizer.zero_grad()
+                #     if X.shape[0] != batch_size:
+                #         # Pad x with the padding
+                #         X = torch.cat([X, padding])
+                #     X = X.to(device)
+                #     t = t.to(device)
+                #     _X = X.view(-1, batch_size * d)
+                #
+                #     output = model(_X)
+                #     loss = criterion_intra(X, t, output)
+                #     print(f"Epoch [{epoch}]: Loss: {loss.item()}")
+                #     wandb.log({"loss": loss.item()})  # log to wandb
+                #     losses.append(loss)
+                #     loss.backward()
+                #     optimizer.step()
 
                 print(f"\n Epoch Complete {epoch}: Loss: {loss.item()} \n")
 
