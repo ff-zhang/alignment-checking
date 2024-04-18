@@ -253,22 +253,22 @@ if __name__ == "__main__":
                     loss.backward()
                     optimizer.step()
 
-                # for X, t in train_loader:
-                #     optimizer.zero_grad()
-                #     if X.shape[0] != batch_size:
-                #         # Pad x with the padding
-                #         X = torch.cat([X, padding])
-                #     X = X.to(device)
-                #     t = t.to(device)
-                #     _X = X.view(-1, batch_size * d)
-                #
-                #     output = model(_X)
-                #     loss = criterion_intra(X, t, output)
-                #     print(f"Epoch [{epoch}]: Loss: {loss.item()}")
-                #     wandb.log({"loss": loss.item()})  # log to wandb
-                #     losses.append(loss)
-                #     loss.backward()
-                #     optimizer.step()
+                for X, t in train_loader:
+                    optimizer.zero_grad()
+                    if X.shape[0] != batch_size:
+                        # Pad x with the padding
+                        X = torch.cat([X, padding])
+                    X = X.to(device)
+                    t = t.to(device)
+                    _X = X.view(-1, batch_size * d)
+
+                    output = model(_X)
+                    loss = criterion_intra(X, t, output)
+                    print(f"Epoch [{epoch}]: Loss: {loss.item()}")
+                    wandb.log({"loss": loss.item()})  # log to wandb
+                    losses.append(loss)
+                    loss.backward()
+                    optimizer.step()
 
                 print(f"\n Epoch Complete {epoch}: Loss: {loss.item()} \n")
 
