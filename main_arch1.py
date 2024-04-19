@@ -22,7 +22,7 @@ if __name__ == "__main__":
     # Generate intervals starting from 100
     interval_start_points = np.arange(0, 500, args.interval_size)
 
-    if not os.path.exists("sharding.pkl"):
+    if not os.path.exists("arch1_parallel_training_sharding.pkl"):
         # Create a dictionary of start points
         interval_dict = {}
         for i in range(len(interval_start_points) - 1):
@@ -33,9 +33,9 @@ if __name__ == "__main__":
 
         interval_dict[start] = True
 
-        pickle.dump(interval_dict, open("sharding.pkl", "wb"))
+        pickle.dump(interval_dict, open("arch1_parallel_training_sharding.pkl", "wb"))
     else:
-        interval_dict = pickle.load(open("sharding.pkl", "rb"))
+        interval_dict = pickle.load(open("arch1_parallel_training_sharding.pkl", "rb"))
 
         start = None
         end = None
@@ -53,7 +53,7 @@ if __name__ == "__main__":
         else:
             print("Processing interval", start, "to", end)
 
-        pickle.dump(interval_dict, open("sharding.pkl", "wb"))
+        pickle.dump(interval_dict, open("arch1_parallel_training_sharding.pkl", "wb"))
 
     # Set the seed
     seed = 2
@@ -166,8 +166,8 @@ if __name__ == "__main__":
             pickle.dump(models, open(f"models_{start}_{end}.pkl", "wb"))
 
     # Now that we have the models
-    if os.path.exists("explanations.pkl"):
-        explanations = pickle.load(open("explanations.pkl", "rb"))
+    if os.path.exists("Arch1LRPPCA/explanations.pkl"):
+        explanations = pickle.load(open("Arch1LRPPCA/explanations.pkl", "rb"))
         print("Explanations loaded")
     else:
         X.requires_grad = True
@@ -194,4 +194,4 @@ if __name__ == "__main__":
             explanations[k] = explanation
 
         # Save the explanations
-        pickle.dump(explanations, open("explanations.pkl", "wb"))
+        pickle.dump(explanations, open("Arch1LRPPCA/explanations.pkl", "wb"))

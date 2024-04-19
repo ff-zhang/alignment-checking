@@ -92,7 +92,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if not os.path.exists(args.models_path):
-        with open('sharding.pkl', 'rb') as f:
+        with open('arch1_parallel_training_sharding.pkl', 'rb') as f:
             interval_dict = pickle.load(f)
         models = {}
         interval = 25
