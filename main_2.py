@@ -29,13 +29,14 @@ def make_weights_for_balanced_classes(images, nclasses):
 
 
 class SeparationLoss(torch.nn.Module):
-    def __init__(self, k, project_to_embed=False, mode="inter", l1=False, point5=False):
+    def __init__(self, k, project_to_embed=False, mode="inter", l1=False, point5=False, projMatrix=True):
         super(SeparationLoss, self).__init__()
         self.k = k
         self.project_to_embed = project_to_embed
         self.mode = mode
         self.l1 = l1
         self.point5 = point5
+        self.projMatrix = projMatrix
         if self.project_to_embed:
             # load 50d glove embeddings
             with open('glove/glove_50d.pkl', 'rb') as f:
@@ -88,17 +89,20 @@ class SeparationLoss(torch.nn.Module):
         # vecs is a matrix of shape n x d
         # n is the number of vectors
         # The projection is vecs @ y
-        proj_matrix = y @ (y.T @ y).inverse() @ y.T
+        if self.projMatrix:
+            proj_matrix = y @ (y.T @ y).inverse() @ y.T
 
-        # The projection of the vectors
-        proj_vecs = proj_matrix @ vecs.T  # Transpose to get the d x n matrix
-        # This product produces a matrix of shape d x n of the projected vectors
+            # The projection of the vectors
+            proj_vecs = proj_matrix @ vecs.T  # Transpose to get the d x n matrix
+            # This product produces a matrix of shape d x n of the projected vectors
 
-        # Transpose the projected vectors to get a matrix of shape n x d
-        proj_vecs = proj_vecs.T
+            # Transpose the projected vectors to get a matrix of shape n x d
+            proj_vecs = proj_vecs.T
 
-        # Reduce the projected vectors to a matrix of shape n x k
-        proj_vecs = proj_vecs @ y
+            # Reduce the projected vectors to a matrix of shape n x k
+            proj_vecs = proj_vecs @ y
+        else:
+            proj_vecs = vecs @ y
 
         # Measure how distinct the projected vectors are based on their label
         # Want to minimize distance between projected vectors of the same label and maximize distance between projected vectors of different labels
@@ -167,17 +171,20 @@ if __name__ == "__main__":
     d = 50
     K = 2
     lr = 0.000001
-    epochs = 5
-    project_to_embed = True
+    epochs = 25
+    project_to_embed = False
     l1 = False
     hundred_d = False
     two_hundred_d = False
     Point5Loss = False
+    ProjMatrix = True
 
     if project_to_embed:
         save_dir = "./projectors_embed"
     else:
         save_dir = "./projectors"
+
+    save_dir += f"_epochs_{epochs}"
 
     if l1:
         save_dir += "_l1"
@@ -193,6 +200,9 @@ if __name__ == "__main__":
 
     if Point5Loss:
         save_dir += "_Point5Loss"
+
+    if not ProjMatrix:
+        save_dir += "_NoProjMatrix"
 
     plot = False
 
@@ -226,7 +236,7 @@ if __name__ == "__main__":
     words, embeddings = pickle.load(open(filename, "rb"))
     cluster_lengths = [len(words[i]) for i in range(len(words))]
     # Find the 10 smallest clusters
-    smallest_clusters = sorted(range(len(cluster_lengths)), key=lambda i: cluster_lengths[i])[1:11]
+    smallest_clusters = sorted(range(len(cluster_lengths)), key=lambda i: cluster_lengths[i])[1:26]
 
     unique_labels = smallest_clusters
 
@@ -253,8 +263,8 @@ if __name__ == "__main__":
         model = Projector(n, d, K).to(device)
 
         # Create the loss function
-        criterion_inter = SeparationLoss(K, project_to_embed, mode="inter", l1=l1, point5=Point5Loss).to(device)
-        criterion_intra = SeparationLoss(K, project_to_embed, mode="intra", l1=l1, point5=Point5Loss).to(device)
+        criterion_inter = SeparationLoss(K, project_to_embed, mode="inter", l1=l1, point5=Point5Loss, projMatrix=ProjMatrix).to(device)
+        criterion_intra = SeparationLoss(K, project_to_embed, mode="intra", l1=l1, point5=Point5Loss, projMatrix=ProjMatrix).to(device)
 
         # Create the optimizer
         optimizer = torch.optim.Adam(model.parameters(), lr=lr)
