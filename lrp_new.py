@@ -131,5 +131,8 @@ if __name__ == "__main__":
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    evidence = do_lrp(model, dataloader, device) # what to do with the output from this, probably need to figure out how to visualize
-    print("Evidence = \n{}".format(evidence))
+    evidence = do_lrp(model, dataloader, device)
+    evidence_path = f'evidence_{args.index}.pkl'
+    with open(evidence_path, 'wb') as f:
+        pickle.dump(evidence, f)
+    print(f"Evidence saved to {evidence_path}.")
