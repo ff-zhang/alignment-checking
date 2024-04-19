@@ -102,7 +102,7 @@ if __name__ == "__main__":
             start = k
             end = start + interval
 
-            if torch.cuda.is_available():
+            if not torch.cuda.is_available():
                 shard = CPU_Unpickler(open(f'models_{start}_{end}.pkl', 'rb')).load()
             else:
                 shard = pickle.load(open(f'models_{start}_{end}.pkl', 'rb'))
