@@ -76,5 +76,7 @@ if __name__ == "__main__":
     else:
         print(f"Incorrect dataloader filepath.")
 
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+    do_lrp(model, dataloader, device) # what to do with the output from this, probably need to figure out how to visualize
 
