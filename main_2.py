@@ -29,11 +29,13 @@ def make_weights_for_balanced_classes(images, nclasses):
 
 
 class SeparationLoss(torch.nn.Module):
-    def __init__(self, k, project_to_embed=False, mode="inter"):
+    def __init__(self, k, project_to_embed=False, mode="inter", l1=False, point5=False):
         super(SeparationLoss, self).__init__()
         self.k = k
         self.project_to_embed = project_to_embed
         self.mode = mode
+        self.l1 = l1
+        self.point5 = point5
         if self.project_to_embed:
             # load 50d glove embeddings
             with open('glove/glove_50d.pkl', 'rb') as f:
@@ -102,16 +104,32 @@ class SeparationLoss(torch.nn.Module):
         # Want to minimize distance between projected vectors of the same label and maximize distance between projected vectors of different labels
 
         loss = 0
-        for i in range(len(labels)):
-            for j in range(i + 1, len(labels)):
-                dist = torch.norm(
-                    proj_vecs[i] - proj_vecs[j])  # Think about changing to adding the loss only if they are both 1
-                if labels[i] == labels[j] and self.mode == "intra":
-                    loss += torch.tensor(labels[i] * dist, dtype=torch.float32, requires_grad=True)
-                elif labels[i] != labels[j] and self.mode == "inter":
-                    loss -= dist
+
+        if self.point5:
+            x_equals_y = torch.tensor([0.5] * k)
+            # Replace the 0s in labels with -1
+            for i in range(len(labels)):
+                # Normalise the projected vector
+                vec = proj_vecs[i] / torch.norm(proj_vecs[i])
+
+                if labels[i] == 0:
+                    loss += torch.max(torch.tensor(0), (x_equals_y - vec).sum())
                 else:
-                    continue
+                    loss += vec.sum()
+        else:
+            for i in range(len(labels)):
+                for j in range(i + 1, len(labels)):
+                    if l1:
+                        dist = (proj_vecs[i] - proj_vecs[j]).abs().sum()
+                    else:
+                        dist = torch.norm(
+                            proj_vecs[i] - proj_vecs[j])  # Think about changing to adding the loss only if they are both 1
+                    if labels[i] == labels[j] and self.mode == "intra":
+                        loss += torch.tensor(labels[i] * dist, dtype=torch.float32, requires_grad=True)
+                    elif labels[i] != labels[j] and self.mode == "inter":
+                        loss -= dist
+                    else:
+                        continue
 
         return loss
 
@@ -148,23 +166,42 @@ if __name__ == "__main__":
     n = batch_size
     d = 50
     K = 2
-    lr = 0.0001
+    lr = 0.000001
     epochs = 5
-    project_to_embed = False
+    project_to_embed = True
+    l1 = False
+    hundred_d = False
+    two_hundred_d = False
+    Point5Loss = False
 
     if project_to_embed:
         save_dir = "./projectors_embed"
     else:
         save_dir = "./projectors"
 
-    plot = True
+    if l1:
+        save_dir += "_l1"
+
+    filename = "./glove/kmeans_clusters_500.pkl"
+    if hundred_d:
+        save_dir += "_100d"
+        d = 100
+        filename = "./glove/kmeans_clusters_500_100d.pkl"
+    elif two_hundred_d:
+        save_dir += "_200d"
+        d = 200
+
+    if Point5Loss:
+        save_dir += "_Point5Loss"
+
+    plot = False
 
     # Check if the /projectors directory exists
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
     # Load the data about the clusters
-    _, data = pickle.load(open("./glove/kmeans_clusters_500.pkl", "rb"))
+    _, data = pickle.load(open(filename, "rb"))
 
     # Check if GPU(s) are available
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -186,10 +223,22 @@ if __name__ == "__main__":
     targets = [x.item() for x in labels]
     unique_labels = list(set(targets))
 
+    words, embeddings = pickle.load(open(filename, "rb"))
+    cluster_lengths = [len(words[i]) for i in range(len(words))]
+    # Find the 10 smallest clusters
+    smallest_clusters = sorted(range(len(cluster_lengths)), key=lambda i: cluster_lengths[i])[1:11]
+
+    unique_labels = smallest_clusters
+
+    # # Print the smallest clusters
+    # for i in smallest_clusters:
+    #     print(f"Cluster {i}: {len(words[i])} words")
+    #     print(words[i])
+
     for j in range(len(unique_labels)):
-        if os.path.exists(save_dir + f"/projector-{j}.pth") and os.path.exists(save_dir + f"/closest_words-{j}.pkl"):
+        if os.path.exists(save_dir + f"/projector-{unique_labels[j]}.pth") and os.path.exists(save_dir + f"/closest_words-{unique_labels[j]}.pkl"):
             continue
-        print("Training for label", j)
+        print("Training for label", unique_labels[j])
 
         # Initialize wandb
         run = wandb.init(project="alignment-checking")
@@ -204,8 +253,8 @@ if __name__ == "__main__":
         model = Projector(n, d, K).to(device)
 
         # Create the loss function
-        criterion_inter = SeparationLoss(K, project_to_embed, mode="inter").to(device)
-        criterion_intra = SeparationLoss(K, project_to_embed, mode="intra").to(device)
+        criterion_inter = SeparationLoss(K, project_to_embed, mode="inter", l1=l1, point5=Point5Loss).to(device)
+        criterion_intra = SeparationLoss(K, project_to_embed, mode="intra", l1=l1, point5=Point5Loss).to(device)
 
         # Create the optimizer
         optimizer = torch.optim.Adam(model.parameters(), lr=lr)
@@ -231,8 +280,8 @@ if __name__ == "__main__":
         train_data = TensorDataset(X, target)
         train_loader = DataLoader(train_data, batch_size=batch_size, sampler=sampler, pin_memory=True)
 
-        if os.path.exists(save_dir + f"/projector-{j}.pth"):
-            model.load_state_dict(torch.load(save_dir + f"/projector-{j}.pth"))
+        if os.path.exists(save_dir + f"/projector-{unique_labels[j]}.pth"):
+            model.load_state_dict(torch.load(save_dir + f"/projector-{unique_labels[j]}.pth"))
         else:
             # Train the model
             for epoch in range(epochs):
@@ -279,7 +328,7 @@ if __name__ == "__main__":
                 plt.show()
 
             # Save the model
-            torch.save(model.state_dict(), save_dir + f"/projector-{j}.pth")
+            torch.save(model.state_dict(), save_dir + f"/projector-{unique_labels[j]}.pth")
 
         # Test
 
@@ -300,8 +349,12 @@ if __name__ == "__main__":
         # Average the outputs
         avg_output = torch.mean(torch.stack(outputs), dim=0)
 
+        filename = "./glove/glove_50d.pkl"
+        if hundred_d:
+            filename = "./glove/glove_100d.pkl"
+
         # load 50d glove embeddings
-        with open('glove/glove_50d.pkl', 'rb') as f:
+        with open(filename, 'rb') as f:
             glove_50d = pickle.load(f)
 
         print(len(glove_50d))
@@ -334,7 +387,7 @@ if __name__ == "__main__":
                            glove_50d_data[closest_words], "produced vector": avg_output[i].detach().numpy()}
 
         # Pickle the dictionary
-        with open(save_dir + f"/closest_words-{j}.pkl", "wb") as f:
+        with open(save_dir + f"/closest_words-{unique_labels[j]}.pkl", "wb") as f:
             pickle.dump(dict, f)
 
         wandb.finish()
