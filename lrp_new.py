@@ -3,6 +3,7 @@ from argparse import ArgumentParser
 import pickle
 import torch
 import numpy as np
+import torch.utils.data
 
 
 def load_model_by_index(models_path, index):
@@ -14,10 +15,26 @@ def load_model_by_index(models_path, index):
     return model
 
 
-def get_test_dataloader(test_data_path):
+def get_test_dataloader(test_data_path, target_class):
     # TODO - create dataloader for the test data
     # idk how the data is stored, so someone has to implement this pls
-    pass
+    words, vectors = pickle.load(open(test_data_path, "rb"))
+
+    X = torch.tensor([])
+    targets = torch.tensor([])
+
+    for cls in vectors.keys():
+        X = torch.cat((X, vectors[cls]))
+        if cls == target_class:
+            targets = torch.cat((targets, torch.tensor([1] * len(vectors[cls]))))
+        else:
+            targets = torch.cat((targets, torch.tensor([0] * len(vectors[cls]))))
+
+    # create a dataloader from the data
+
+    loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(X, targets), batch_size=64, shuffle=True)
+
+    return loader
 
 
 # reference: https://github.com/moboehle/Pytorch-LRP/blob/master/MNIST%20example.ipynb
@@ -60,8 +77,11 @@ if __name__ == "__main__":
     parser.add_argument("--models_path", type=str, required=True, help="Path to the serialized file containing models.")
     parser.add_argument("--index", type=int, required=True, help="Index of the model to load.")
     parser.add_argument("--test_data_path", type=str, required=True, help="Filepath for the test dataset.")
+    parser.add_argument("--target_class", type=int, required=True, help="Class to generate LRP for.")
 
     args = parser.parse_args()
+
+    k = args.target_class
 
     # load the model using the provided path and index
     model = load_model_by_index(args.models_path, args.index)
@@ -70,7 +90,7 @@ if __name__ == "__main__":
     else:
         print(f"No model found at index {args.index}")
 
-    dataloader = get_test_dataloader(args.test_data_path)
+    dataloader = get_test_dataloader(args.test_data_path, k)
     if dataloader is not None:
         print("Dataloader loaded successfully.")
     else:
