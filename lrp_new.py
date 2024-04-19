@@ -35,7 +35,7 @@ def get_test_dataloader(test_data_path, target_class):
     targets = torch.tensor([])
 
     for cls in vectors.keys():
-        X = torch.cat((X, vectors[cls]))
+        X = torch.cat((X, torch.tensor(vectors[cls])))
         if cls == target_class:
             targets = torch.cat((targets, torch.tensor([1] * len(vectors[cls]))))
         else:
@@ -75,7 +75,7 @@ def do_lrp(model, dataloader, device):
         model_pred, input_rel_values = inn_model.innvestigate(in_tensor=data)
         evidence_for_class.append(input_rel_values)
 
-    evidence_for_class = np.array([elt.numpy() for elt in evidence_for_class])
+    # evidence_for_class = np.array([elt.numpy() for elt in evidence_for_class])
 
     # the example contained plots of relevance visualization on MNIST dataset
     # idk how to visualize it for the data we have
