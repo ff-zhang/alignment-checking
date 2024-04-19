@@ -88,7 +88,6 @@ if __name__ == "__main__":
     parser.add_argument("--models_path", type=str, required=True, help="Path to the serialized file containing models.")
     parser.add_argument("--index", type=int, required=True, help="Index of the model to load.")
     parser.add_argument("--test_data_path", type=str, required=True, help="Filepath for the test dataset.")
-    parser.add_argument("--target_class", type=int, required=True, help="Class to generate LRP for.")
 
     args = parser.parse_args()
 
@@ -115,7 +114,7 @@ if __name__ == "__main__":
         with open(args.models_path, 'wb') as f:
             pickle.dump(models, f)
 
-    k = args.target_class
+    k = args.index
 
     # load the model using the provided path and index
     model = load_model_by_index(args.models_path, args.index)
