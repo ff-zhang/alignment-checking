@@ -1,3 +1,5 @@
+import os
+
 from innvestigator import InnvestigateModel
 from argparse import ArgumentParser
 import pickle
@@ -5,6 +7,15 @@ import torch
 import numpy as np
 import torch.utils.data
 
+import pickle
+import io
+
+class CPU_Unpickler(pickle.Unpickler):
+    def find_class(self, module, name):
+        if module == 'torch.storage' and name == '_load_from_bytes':
+            return lambda b: torch.load(io.BytesIO(b), map_location='cpu')
+        else:
+            return super().find_class(module, name)
 
 def load_model_by_index(models_path, index):
     models = pickle.load(open(models_path, "rb"))
@@ -80,6 +91,29 @@ if __name__ == "__main__":
     parser.add_argument("--target_class", type=int, required=True, help="Class to generate LRP for.")
 
     args = parser.parse_args()
+
+    if not os.path.exists(args.models_path):
+        with open('sharding.pkl', 'rb') as f:
+            interval_dict = pickle.load(f)
+        models = {}
+        interval = 25
+
+        for k in interval_dict.keys():
+            start = k
+            end = start + interval
+
+            if torch.cuda.is_available():
+                shard = CPU_Unpickler(open(f'models_{start}_{end}.pkl', 'rb')).load()
+            else:
+                shard = pickle.load(open(f'models_{start}_{end}.pkl', 'rb'))
+
+            for key in shard.keys():
+                if shard[key] is not None:
+                    models[key] = shard[key].to('cpu')
+
+        # Save the models dictionary to a file
+        with open(args.models_path, 'wb') as f:
+            pickle.dump(models, f)
 
     k = args.target_class
 
