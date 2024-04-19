@@ -18,7 +18,7 @@ class CPU_Unpickler(pickle.Unpickler):
             return super().find_class(module, name)
 
 def load_model_by_index(models_path, index):
-    models = pickle.load(open(models_path, "rb"))
+    models = CPU_Unpickler(open(models_path, 'rb')).load()
     model = models.get(index)
     if model is not None:
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
